@@ -1,0 +1,11 @@
+
+RD53A RTL
+Simple test branch is attached that will lock the command (sync command).
+
+Example how to run for questa:
+# mkdir work
+# cd work
+# vlog -sv ../example_tb.sv +incdir+../ +incdir+../src/verilog +define+TEST_DC=20
+# vcom ../src/verilog/array/cba/regionDigitalWriter.vhd
+# vsim -c -do "vsim tb;run 100us"
+

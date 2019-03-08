@@ -1,0 +1,33 @@
+module RD53_AFE_TO(
+    PIXEL_IN_TO, POWER_DOWN_TO,
+    
+    IBIASP1_TO, IBIASP2_TO, VCASN_TO, VCASP1_TO, IBIAS_SF_TO,
+    VREF_KRUM_TO,   VCAS_KRUM_TO,  IBIAS_FEED_TO,// GNDA_KRUM_TO,
+    IBIAS_DISC_TO,  VCASN_DISC_TO, VBL_DISC_TO, VTH_DISC_TO,
+    CAL_HI, CAL_MI, ICTRL_TOT_TO,
+    S0, S1,
+    PHI_AZ_TO,STROBE_TO,
+    SEL_C2F_TO,
+    SEL_C4F_TO,
+    DELAY_IN_TO, DELAY_OUT_TO,
+    VOUTP_TO, VOUTN_TO,
+    VOUT_PREAMP
+	);
+    
+    input  PIXEL_IN, POWER_DOWN_TO;
+    input  IBIASP1, IBIASP2_TO, VCASN_TO, VCASP1_TO, IBIAS_SF_TO;
+    input  VREF_KRUM_TO, VCAS_KRUM_TO, IBIAS_FEED_TO; //, GNDA_KRUM_TO;
+    input  IBIAS_DISC_TO, VCASN_DISC_TO, VBL_DISC_TO, VTH_DISC_TO;
+    input  CAL_HI, CAL_MI, ICTRL_TOT_TO;
+    
+	input  S0, S1;
+	output  VOUT_PREAMP;
+    input  PHI_AZ_TO;
+    input  STROBE_TO;
+    input  SEL_C2F_TO;
+    input  SEL_C4F_TO;
+    input  DELAY_IN_TO;
+    output DELAY_OUT_TO;
+    output VOUTP_TO, VOUTN_TO;
+
+endmodule
