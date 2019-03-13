@@ -1,0 +1,300 @@
+-------------------------------------------------------------------------------
+-- File       : AtlasRd53Core.vhd
+-- Company    : SLAC National Accelerator Laboratory
+-------------------------------------------------------------------------------
+-- Description: RX PHY Core module
+-------------------------------------------------------------------------------
+-- This file is part of 'ATLAS RD53 DEV'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'ATLAS RD53 DEV', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
+-------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
+use work.Pgp3Pkg.all;
+
+entity AtlasRd53Core is
+   generic (
+      TPD_G         : time    := 1 ns;
+      AXIS_CONFIG_G : AxiStreamConfigType;
+      VALID_THOLD_G : positive := 128;  -- Hold until enough to burst into the interleaving MUX
+      SIMULATION_G  : boolean := false;
+      XIL_DEVICE_G  : string  := "7SERIES";
+      SYNTH_MODE_G  : string  := "inferred";
+      MEMORY_TYPE_G : string  := "block");
+   port (
+      -- I/O Delay Interfaces (clk160MHz domain)
+      iDelayCtrlRdy   : in  sl;
+      pllRst          : out sl;
+      -- AXI-Lite Interface (axilClk domain)
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType;
+      -- Streaming Config/Trig Interface (clk160MHz domain)
+      emuTimingMaster   : in  AxiStreamMasterType;
+      emuTimingSlave    : out AxiStreamSlaveType;
+      -- Streaming Data Interface (axisClk domain)
+      axisClk         : in  sl;
+      axisRst         : in  sl;
+      mDataMaster     : out AxiStreamMasterType;
+      mDataSlave      : in  AxiStreamSlaveType;
+      sConfigMaster   : in  AxiStreamMasterType;
+      sConfigSlave    : out AxiStreamSlaveType;
+      mConfigMaster   : out AxiStreamMasterType;
+      mConfigSlave    : in  AxiStreamSlaveType;
+      -- Timing/Trigger Interface
+      clk640MHz       : in  sl;
+      clk160MHz       : in  sl;
+      clk80MHz        : in  sl;
+      clk40MHz        : in  sl;
+      rst640MHz       : in  sl;
+      rst160MHz       : in  sl;
+      rst80MHz        : in  sl;
+      rst40MHz        : in  sl;
+      refClk300MHz    : in  sl;
+      -- HITOR Interface (clk160MHz domain)
+      hitbus          : out slv(3 downto 0);
+      -- RD53 ASIC Serial Ports
+      dPortDataP      : in  slv(3 downto 0);
+      dPortDataN      : in  slv(3 downto 0);
+      dPortCmdP       : out sl;
+      dPortCmdN       : out sl);
+end AtlasRd53Core;
+
+architecture mapping of AtlasRd53Core is
+
+   signal dataMaster : AxiStreamMasterType;
+   signal dataCtrl   : AxiStreamCtrlType;
+
+   signal configMaster : AxiStreamMasterType;
+   signal configCtrl   : AxiStreamCtrlType;
+
+   signal txDataMaster : AxiStreamMasterType;
+   signal txDataSlave  : AxiStreamSlaveType;
+
+   signal batcherMaster : AxiStreamMasterType;
+   signal batcherSlave  : AxiStreamSlaveType;
+
+   signal autoReadReg : Slv32Array(3 downto 0);
+   signal enable      : slv(3 downto 0);
+   signal linkUp      : slv(3 downto 0);
+   signal rxPhyXbar   : Slv2Array(3 downto 0);
+   signal chBond      : sl;
+   signal debugStream : sl;
+   signal invData     : slv(3 downto 0);
+   signal invCmd      : sl;
+   signal batchSize   : slv(15 downto 0);
+   signal timerConfig : slv(15 downto 0);   
+
+begin
+
+   -------------------------
+   -- Control/Monitor Module
+   -------------------------
+   U_Ctrl : entity work.AtlasRd53Ctrl
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- Monitoring Interface (clk160MHz domain)
+         clk160MHz       => clk160MHz,
+         rst160MHz       => rst160MHz,
+         autoReadReg     => autoReadReg,
+         dataDrop        => dataCtrl.overflow,
+         configDrop      => configCtrl.overflow,
+         chBond          => chBond,
+         linkUp          => linkUp,
+         enable          => enable,
+         invData         => invData,
+         invCmd          => invCmd,
+         rxPhyXbar       => rxPhyXbar,
+         debugStream     => debugStream,
+         pllRst          => pllRst,
+         batchSize       => batchSize,
+         timerConfig     => timerConfig,
+         -- AXI-Lite Interface (axilClk domain)
+         axilClk         => axilClk,
+         axilRst         => axilRst,
+         axilReadMaster  => axilReadMaster,
+         axilReadSlave   => axilReadSlave,
+         axilWriteMaster => axilWriteMaster,
+         axilWriteSlave  => axilWriteSlave);
+
+   ------------------------
+   -- CMD Generation Module
+   ------------------------
+   U_Cmd : entity work.AtlasRd53TxCmdWrapper
+      generic map (
+         TPD_G         => TPD_G,
+         AXIS_CONFIG_G => AXIS_CONFIG_G,
+         SYNTH_MODE_G  => SYNTH_MODE_G,
+         MEMORY_TYPE_G => MEMORY_TYPE_G)
+      port map (
+         -- Streaming EMU Trig Interface (clk160MHz domain)
+         emuTimingMaster => emuTimingMaster,
+         emuTimingSlave  => emuTimingSlave,
+         -- Streaming Config Interface (axisClk domain)
+         axisClk         => axisClk,
+         axisRst         => axisRst,
+         sConfigMaster   => sConfigMaster,
+         sConfigSlave    => sConfigSlave,
+         -- Timing Interface
+         clk160MHz       => clk160MHz,
+         rst160MHz       => rst160MHz,
+         -- Command Serial Interface (clk160MHz domain)
+         invCmd          => invCmd,
+         cmdOutP         => dPortCmdP,
+         cmdOutN         => dPortCmdN);
+
+   ---------------
+   -- RX PHY Layer
+   ---------------
+   U_RxPhyLayer : entity work.AuroraRxChannel
+      generic map (
+         TPD_G        => TPD_G,
+         SIMULATION_G => SIMULATION_G,
+         XIL_DEVICE_G => XIL_DEVICE_G,
+         SYNTH_MODE_G => SYNTH_MODE_G)
+      port map (
+         -- HITOR Interface
+         hitbus       => hitbus,
+         -- RD53 ASIC Serial Ports
+         dPortDataP   => dPortDataP,
+         dPortDataN   => dPortDataN,
+         -- Timing Interface
+         clk640MHz    => clk640MHz,
+         clk160MHz    => clk160MHz,
+         rst160MHz    => rst160MHz,
+         -- Control Interface
+         enable       => enable,
+         invData      => invData,
+         linkUp       => linkUp,
+         chBond       => chBond,
+         rxPhyXbar    => rxPhyXbar,
+         debugStream  => debugStream,
+         -- AutoReg and Read back Interface
+         dataMaster   => dataMaster,
+         configMaster => configMaster,
+         autoReadReg  => autoReadReg);
+
+
+   -----------------------         
+   -- Outbound Config FIFO
+   -----------------------         
+   U_ConfigFifo : entity work.AxiStreamFifoV2
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         SLAVE_READY_EN_G    => false,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         SYNTH_MODE_G        => SYNTH_MODE_G,
+         MEMORY_TYPE_G       => "block",
+         GEN_SYNC_FIFO_G     => false,
+         FIFO_ADDR_WIDTH_G   => 9,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,  -- 64-bit interface
+         MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
+      port map (
+         -- Slave Port
+         sAxisClk    => clk160MHz,
+         sAxisRst    => rst160MHz,
+         sAxisMaster => configMaster,
+         sAxisCtrl   => configCtrl,
+         -- Master Port
+         mAxisClk    => axisClk,
+         mAxisRst    => axisRst,
+         mAxisMaster => mConfigMaster,
+         mAxisSlave  => mConfigSlave);
+
+   ---------------------         
+   -- Outbound Data FIFO
+   ---------------------       
+   U_DataFifo : entity work.AxiStreamFifoV2
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         SLAVE_READY_EN_G    => false,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         SYNTH_MODE_G        => SYNTH_MODE_G,
+         MEMORY_TYPE_G       => "block",
+         GEN_SYNC_FIFO_G     => false,
+         FIFO_ADDR_WIDTH_G   => 9,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
+         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C)
+      port map (
+         -- Slave Port
+         sAxisClk    => clk160MHz,
+         sAxisRst    => rst160MHz,
+         sAxisMaster => dataMaster,
+         sAxisCtrl   => dataCtrl,
+         -- Master Port
+         mAxisClk    => axisClk,
+         mAxisRst    => axisRst,
+         mAxisMaster => txDataMaster,
+         mAxisSlave  => txDataSlave);
+
+   ---------------------------------------------------------
+   -- Batch Multiple 64-bit data words into large AXIS frame
+   ---------------------------------------------------------
+   U_DataBatcher : entity work.AtlasRd53RxDataBatcher
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- Clock and Reset
+         axisClk     => axisClk,
+         axisRst     => axisRst,
+         -- Configuration/Status Interface
+         batchSize   => batchSize,
+         timerConfig => timerConfig,
+         -- AXI Streaming Interface
+         sDataMaster => txDataMaster,
+         sDataSlave  => txDataSlave,
+         mDataMaster => batcherMaster,
+         mDataSlave  => batcherSlave);
+
+   --------------------
+   -- Resize/Burst FIFO
+   --------------------
+   Burst_FIFO : entity work.AxiStreamFifoV2
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         SLAVE_READY_EN_G    => true,
+         VALID_THOLD_G       => VALID_THOLD_G,
+         VALID_BURST_MODE_G  => true,
+         -- FIFO configurations
+         SYNTH_MODE_G        => SYNTH_MODE_G,
+         MEMORY_TYPE_G       => "block",
+         GEN_SYNC_FIFO_G     => true,
+         FIFO_ADDR_WIDTH_G   => 9,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
+         MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
+      port map (
+         -- Slave Port
+         sAxisClk    => axisClk,
+         sAxisRst    => axisRst,
+         sAxisMaster => batcherMaster,
+         sAxisSlave  => batcherSlave,
+         -- Master Port
+         mAxisClk    => axisClk,
+         mAxisRst    => axisRst,
+         mAxisMaster => mDataMaster,
+         mAxisSlave  => mDataSlave); 
+
+end mapping;

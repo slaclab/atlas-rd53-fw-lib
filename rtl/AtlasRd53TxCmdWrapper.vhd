@@ -1,0 +1,186 @@
+-------------------------------------------------------------------------------
+-- File       : AtlasRd53TxCmdWrapper.vhd
+-- Company    : SLAC National Accelerator Laboratory
+-------------------------------------------------------------------------------
+-- Description: Wrapper for AtlasRd53TxCmd
+-------------------------------------------------------------------------------
+-- This file is part of 'ATLAS RD53 DEV'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'ATLAS RD53 DEV', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
+-------------------------------------------------------------------------------
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
+
+use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
+use work.SsiPkg.all;
+
+library unisim;
+use unisim.vcomponents.all;
+
+entity AtlasRd53TxCmdWrapper is
+   generic (
+      TPD_G         : time   := 1 ns;
+      AXIS_CONFIG_G : AxiStreamConfigType;
+      SYNTH_MODE_G  : string := "inferred";
+      MEMORY_TYPE_G : string := "block");
+   port (
+      -- Streaming EMU Trig Interface (clk160MHz domain)
+      emuTimingMaster : in  AxiStreamMasterType;
+      emuTimingSlave  : out AxiStreamSlaveType;
+      -- Streaming Config Interface (axisClk domain)
+      axisClk         : in  sl;
+      axisRst         : in  sl;
+      -- Streaming RD53 Config/Trig Interface (clk160MHz domain)
+      sConfigMaster   : in  AxiStreamMasterType;
+      sConfigSlave    : out AxiStreamSlaveType;
+      -- Timing Interface
+      clk160MHz       : in  sl;
+      rst160MHz       : in  sl;
+      -- Command Serial Interface (clk160MHz domain)
+      invCmd          : in  sl;
+      cmdOutP         : out sl;
+      cmdOutN         : out sl);
+end entity AtlasRd53TxCmdWrapper;
+
+architecture rtl of AtlasRd53TxCmdWrapper is
+
+   signal cmdMaster : AxiStreamMasterType;
+   signal cmdSlave  : AxiStreamSlaveType;
+
+   signal muxMaster : AxiStreamMasterType;
+   signal muxSlave  : AxiStreamSlaveType;
+
+   signal configMaster : AxiStreamMasterType;
+   signal configSlave  : AxiStreamSlaveType;
+
+   signal slave : AxiStreamSlaveType;
+
+   signal rdyL : sl;
+
+   signal cmd     : sl;
+   signal cmdMask : sl;
+
+begin
+
+   --------------------------------------------------------------
+   -- Prevent back pressuring the DMA if the 160 MHz is not ready
+   --------------------------------------------------------------
+   sConfigSlave <= slave when (rdyL = '0') else AXI_STREAM_SLAVE_FORCE_C;
+   U_rdyL : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => axisClk,
+         dataIn  => rst160MHz,
+         dataOut => rdyL);
+
+   -----------------------         
+   -- Outbound Config FIFO
+   -----------------------         
+   U_ConfigFifo : entity work.AxiStreamFifoV2
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         SLAVE_READY_EN_G    => false,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         SYNTH_MODE_G        => SYNTH_MODE_G,
+         MEMORY_TYPE_G       => "block",
+         GEN_SYNC_FIFO_G     => false,
+         FIFO_ADDR_WIDTH_G   => 9,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => AXIS_CONFIG_G,
+         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+      port map (
+         -- Slave Port
+         sAxisClk    => axisClk,
+         sAxisRst    => axisRst,
+         sAxisMaster => sConfigMaster,
+         sAxisSlave  => slave,
+         -- Master Port
+         mAxisClk    => clk160MHz,
+         mAxisRst    => rst160MHz,
+         mAxisMaster => configMaster,
+         mAxisSlave  => configSlave);
+
+   U_Mux : entity work.AxiStreamMux
+      generic map (
+         TPD_G         => TPD_G,
+         NUM_SLAVES_G  => 2,
+         PIPE_STAGES_G => 1)
+      port map (
+         -- Clock and reset
+         axisClk         => clk160MHz,
+         axisRst         => rst160MHz,
+         -- Slaves
+         sAxisMasters(0) => configMaster,
+         sAxisMasters(1) => emuTimingMaster,
+         sAxisSlaves(0)  => configSlave,
+         sAxisSlaves(1)  => emuTimingSlave,
+         -- Master
+         mAxisMaster     => muxMaster,
+         mAxisSlave      => muxSlave);
+
+   U_FW_CACH : entity work.AxiStreamFifoV2
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         INT_PIPE_STAGES_G   => 0,
+         PIPE_STAGES_G       => 0,
+         SLAVE_READY_EN_G    => true,
+         VALID_THOLD_G       => 4090,   -- less than 2**FIFO_ADDR_WIDTH_G
+         VALID_BURST_MODE_G  => true,   -- bursting mode enabled
+         -- FIFO configurations
+         SYNTH_MODE_G        => SYNTH_MODE_G,
+         MEMORY_TYPE_G       => MEMORY_TYPE_G,
+         GEN_SYNC_FIFO_G     => true,
+         FIFO_ADDR_WIDTH_G   => 12,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
+         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+      port map (
+         -- Slave Port
+         sAxisClk    => clk160MHz,
+         sAxisRst    => rst160MHz,
+         sAxisMaster => muxMaster,
+         sAxisSlave  => muxSlave,
+         -- Master Port
+         mAxisClk    => clk160MHz,
+         mAxisRst    => rst160MHz,
+         mAxisMaster => cmdMaster,
+         mAxisSlave  => cmdSlave);
+
+   U_Cmd : entity work.AtlasRd53TxCmd
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- Clock and Reset
+         clk160MHz => clk160MHz,
+         rst160MHz => rst160MHz,
+         -- Streaming RD53 Config Interface (clk160MHz domain)
+         cmdMaster => cmdMaster,
+         cmdSlave  => cmdSlave,
+         -- Serial Output Interface
+         cmdOut    => cmd);
+
+   cmdMask <= cmd xor invCmd;
+
+   U_ODDR : entity work.OutputBufferReg
+      generic map (
+         TPD_G       => TPD_G,
+         DIFF_PAIR_G => true)
+      port map (
+         C  => clk160MHz,
+         I  => cmdMask,
+         O  => cmdOutP,
+         OB => cmdOutN);
+
+end rtl;
