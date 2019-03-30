@@ -2,7 +2,7 @@
 -- File       : AuroraRxChannel.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Wrapper for aurora_rx_lane
+-- Description: Wrapper for AuroraRxLane
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -28,26 +28,25 @@ entity AuroraRxChannel is
       XIL_DEVICE_G : string  := "7SERIES";
       SYNTH_MODE_G : string  := "inferred");
    port (
-      -- HITOR Interface (clk160MHz domain)
-      hitbus       : out slv(3 downto 0);
       -- RD53 ASIC Serial Ports
-      dPortDataP   : in  slv(3 downto 0);
-      dPortDataN   : in  slv(3 downto 0);
+      dPortDataP    : in  slv(3 downto 0);
+      dPortDataN    : in  slv(3 downto 0);
       -- Timing Interface
-      clk640MHz    : in  sl;
-      clk160MHz    : in  sl;
-      rst160MHz    : in  sl;
+      clk640MHz     : in  sl;
+      clk160MHz     : in  sl;
+      rst160MHz     : in  sl;
       -- Status/Control Interface
-      enable       : in  slv(3 downto 0);
-      invData      : in  slv(3 downto 0);
-      linkUp       : out slv(3 downto 0);
-      chBond       : out sl;
-      rxPhyXbar    : in  Slv2Array(3 downto 0);
-      debugStream  : in  sl;
+      iDelayCtrlRdy : in  sl;
+      enable        : in  slv(3 downto 0);
+      invData       : in  slv(3 downto 0);
+      linkUp        : out slv(3 downto 0);
+      chBond        : out sl;
+      rxPhyXbar     : in  Slv2Array(3 downto 0);
+      debugStream   : in  sl;
       -- AutoReg and Read back Interface
-      dataMaster   : out AxiStreamMasterType;
-      configMaster : out AxiStreamMasterType;
-      autoReadReg  : out Slv32Array(3 downto 0));
+      dataMaster    : out AxiStreamMasterType;
+      configMaster  : out AxiStreamMasterType;
+      autoReadReg   : out Slv32Array(3 downto 0));
 end AuroraRxChannel;
 
 architecture rtl of AuroraRxChannel is
@@ -79,18 +78,17 @@ architecture rtl of AuroraRxChannel is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal rst160MHzL : sl := '0';
-   signal fifoRst    : sl := '1';
+   signal fifoRst : sl := '1';
 
+   signal rxLinkUp : slv(3 downto 0)        := (others => '0');
    signal rxValid  : slv(3 downto 0)        := (others => '0');
    signal rxHeader : Slv2Array(3 downto 0)  := (others => (others => '0'));
    signal rxData   : Slv64Array(3 downto 0) := (others => (others => '0'));
-   signal rxStatus : Slv8Array(3 downto 0)  := (others => (others => '0'));
 
+   signal rxLinkUpOut : slv(3 downto 0)        := (others => '0');
    signal rxValidOut  : slv(3 downto 0)        := (others => '0');
    signal rxHeaderOut : Slv2Array(3 downto 0)  := (others => (others => '0'));
    signal rxDataOut   : Slv64Array(3 downto 0) := (others => (others => '0'));
-   signal rxStatusOut : Slv8Array(3 downto 0)  := (others => (others => '0'));
 
    signal valid  : slv(3 downto 0)        := (others => '0');
    signal afull  : slv(3 downto 0)        := (others => '0');
@@ -103,7 +101,7 @@ architecture rtl of AuroraRxChannel is
    attribute dont_touch of rxValid  : signal is "TRUE";
    attribute dont_touch of rxHeader : signal is "TRUE";
    attribute dont_touch of rxData   : signal is "TRUE";
-   attribute dont_touch of rxStatus : signal is "TRUE";
+   attribute dont_touch of rxLinkUp : signal is "TRUE";
    attribute dont_touch of valid    : signal is "TRUE";
    attribute dont_touch of afull    : signal is "TRUE";
    attribute dont_touch of rdEn     : signal is "TRUE";
@@ -112,29 +110,27 @@ architecture rtl of AuroraRxChannel is
 
 begin
 
-   -- Placeholder for future code
-   hitbus <= x"0";
-
-   rst160MHzL <= not(rst160MHz);
-
    GEN_LANE : for i in 3 downto 0 generate
 
-      linkUp(i) <= rxStatus(i)(1);
-
-      U_Rx : entity work.aurora_rx_lane
-         -- generic map (
-         -- g_SERDES_TYPE => "CUSTOM")
+      U_Rx : entity work.AuroraRxLane
+         generic map (
+            TPD_G        => TPD_G,
+            XIL_DEVICE_G => XIL_DEVICE_G)
          port map (
-            rst_n_i      => rst160MHzL,
-            clk_rx_i     => clk160MHz,
-            clk_serdes_i => clk640MHz,
-            rx_data_i_p  => dPortDataP(i),
-            rx_data_i_n  => dPortDataN(i),
-            inv_rx_data  => invData(i),
-            rx_data_o    => rxDataOut(i),
-            rx_header_o  => rxHeaderOut(i),
-            rx_valid_o   => rxValidOut(i),
-            rx_stat_o    => rxStatusOut(i));
+            -- RD53 ASIC Serial Interface
+            dPortDataP    => dPortDataP(i),
+            dPortDataN    => dPortDataN(i),
+            polarity      => invData(i),
+            iDelayCtrlRdy => iDelayCtrlRdy,
+            -- Timing Interface
+            clk640MHz     => clk160MHz,
+            clk160MHz     => clk640MHz,
+            rst160MHz     => rst160MHz,
+            -- Output
+            rxLinkUp      => rxLinkUpOut(i),
+            rxValid       => rxValidOut(i),
+            rxHeader      => rxHeaderOut(i),
+            rxData        => rxDataOut(i));
 
       -- Crossbar Switch
       process(clk160MHz)
@@ -143,7 +139,7 @@ begin
             rxData(i)   <= rxDataOut(conv_integer(rxPhyXbar(i)))   after TPD_G;
             rxHeader(i) <= rxHeaderOut(conv_integer(rxPhyXbar(i))) after TPD_G;
             rxValid(i)  <= rxValidOut(conv_integer(rxPhyXbar(i)))  after TPD_G;
-            rxStatus(i) <= rxStatusOut(conv_integer(rxPhyXbar(i))) after TPD_G;
+            rxLinkUp(i) <= rxLinkUpOut(conv_integer(rxPhyXbar(i))) after TPD_G;
          end if;
       end process;
 
@@ -182,7 +178,7 @@ begin
          rst160MHz    => rst160MHz,
          -- Data Tap Interface
          debugStream  => debugStream,
-         rxStatus     => rxStatus,
+         rxLinkUp     => rxLinkUp,
          rxValid      => rxValid,
          rxHeader     => rxHeader,
          rxData       => rxData,
@@ -190,7 +186,7 @@ begin
          autoReadReg  => autoReadReg,
          configMaster => configMaster);
 
-   comb : process (afull, data, enable, header, r, rst160MHz, rxStatus, valid) is
+   comb : process (afull, data, enable, header, r, rst160MHz, rxLinkUp, valid) is
       variable v      : RegType;
       variable i      : natural;
       variable phyRdy : sl;
@@ -221,7 +217,7 @@ begin
          end if;
          -- Check if PHY layer ready
          phyRdy := '1';
-         if (enable(i) = '1') and (rxStatus(i)(1) = '0') then
+         if (enable(i) = '1') and (rxLinkUp(i) = '0') then
             phyRdy := '0';
          end if;
       end loop;

@@ -27,15 +27,16 @@ entity AtlasRd53EmuTimingFsm is
       TPD_G        : time     := 1 ns;
       ADDR_WIDTH_G : positive := 8);
    port (
-      -- Clock and reset
-      clk             : in  sl;
-      rst             : in  sl;
-      -- AXI-Lite Interface
+      -- AXI-Lite Interface (axilClk domain)
+      axilClk         : in  sl;
+      axilRst         : in  sl;
       axilReadMaster  : in  AxiLiteReadMasterType;
       axilReadSlave   : out AxiLiteReadSlaveType;
       axilWriteMaster : in  AxiLiteWriteMasterType;
       axilWriteSlave  : out AxiLiteWriteSlaveType;
-      -- RAM Interface
+      -- RAM Interface (clk160MHz domain)
+      clk160MHz       : in  sl;
+      rst160MHz       : in  sl;
       ramAddr         : out slv(ADDR_WIDTH_G-1 downto 0);
       ramData         : in  slv(31 downto 0);
       -- Streaming RD53 Trig Interface (clk160MHz domain)
@@ -51,54 +52,75 @@ architecture mapping of AtlasRd53EmuTimingFsm is
       WAIT_S);
 
    type RegType is record
-      busy            : sl;
-      trigger         : sl;
-      ramRdy          : sl;
-      timeout         : sl;
-      ramAddr         : slv(ADDR_WIDTH_G-1 downto 0);
-      maxAddr         : slv(ADDR_WIDTH_G-1 downto 0);
-      iteration       : slv(15 downto 0);
-      loopCnt         : slv(15 downto 0);
-      timer           : slv(31 downto 0);
-      timerSize       : slv(31 downto 0);
-      backpressureCnt : slv(31 downto 0);
-      axilReadSlave   : AxiLiteReadSlaveType;
-      axilWriteSlave  : AxiLiteWriteSlaveType;
-      trigMaster      : AxiStreamMasterType;
-      state           : StateType;
+      busy         : sl;
+      backpressure : sl;
+      ramRdy       : sl;
+      timeout      : sl;
+      ramAddr      : slv(ADDR_WIDTH_G-1 downto 0);
+      maxAddr      : slv(ADDR_WIDTH_G-1 downto 0);
+      iteration    : slv(15 downto 0);
+      loopCnt      : slv(15 downto 0);
+      timer        : slv(31 downto 0);
+      timerSize    : slv(31 downto 0);
+      trigMaster   : AxiStreamMasterType;
+      state        : StateType;
    end record;
 
    constant REG_INIT_C : RegType := (
-      busy            => '0',
-      trigger         => '0',
-      ramRdy          => '0',
-      timeout         => '0',
-      ramAddr         => (others => '0'),
-      maxAddr         => (others => '0'),
-      iteration       => (others => '0'),
-      loopCnt         => (others => '0'),
-      timer           => (others => '0'),
-      timerSize       => (others => '0'),
-      backpressureCnt => (others => '0'),
-      axilReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
-      axilWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
-      trigMaster      => AXI_STREAM_MASTER_INIT_C,
-      state           => IDLE_S);
+      busy         => '0',
+      backpressure => '0',
+      ramRdy       => '0',
+      timeout      => '0',
+      ramAddr      => (others => '0'),
+      maxAddr      => (others => '0'),
+      iteration    => (others => '0'),
+      loopCnt      => (others => '0'),
+      timer        => (others => '0'),
+      timerSize    => (others => '0'),
+      trigMaster   => AXI_STREAM_MASTER_INIT_C,
+      state        => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal trigger   : sl;
+   signal maxAddr   : slv(ADDR_WIDTH_G-1 downto 0);
+   signal iteration : slv(15 downto 0);
+   signal timerSize : slv(31 downto 0);
+
 begin
 
-   comb : process (axilReadMaster, axilWriteMaster, r, ramData, rst, trigSlave) is
-      variable v      : RegType;
-      variable axilEp : AxiLiteEndPointType;
+   U_Reg : entity work.AtlasRd53EmuTimingReg
+      generic map(
+         TPD_G        => TPD_G,
+         ADDR_WIDTH_G => ADDR_WIDTH_G)
+      port map (
+         -- AXI-Lite Interface (axilClk domain)
+         axilClk         => axilClk,
+         axilRst         => axilRst,
+         axilReadMaster  => axilReadMaster,
+         axilReadSlave   => axilReadSlave,
+         axilWriteMaster => axilWriteMaster,
+         axilWriteSlave  => axilWriteSlave,
+         -- FSM Interface (clk160MHz domain)
+         clk160MHz       => clk160MHz,
+         rst160MHz       => rst160MHz,
+         busy            => r.busy,
+         backpressure    => r.backpressure,
+         trigger         => trigger,
+         maxAddr         => maxAddr,
+         iteration       => iteration,
+         timerSize       => timerSize);
+
+   comb : process (iteration, maxAddr, r, ramData, rst160MHz, timerSize,
+                   trigSlave, trigger) is
+      variable v : RegType;
    begin
       -- Latch the current value
       v := r;
 
       -- Reset the strobes
-      v.trigger := '0';
+      v.backpressure := '0';
 
       -- Update the status flag
       if (r.state = IDLE_S) then
@@ -106,19 +128,6 @@ begin
       else
          v.busy := '1';
       end if;
-
-      -- Determine the transaction type
-      axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
-
-      axiSlaveRegister(axilEp, x"00", 0, v.trigger);
-      axiSlaveRegister(axilEp, x"04", 0, v.timerSize);
-      axiSlaveRegister(axilEp, x"08", 0, v.maxAddr);
-      axiSlaveRegister(axilEp, x"0C", 0, v.iteration);
-      axiSlaveRegisterR(axilEp, x"10", 0, r.backpressureCnt);
-      axiSlaveRegisterR(axilEp, x"14", 0, r.busy);
-
-      -- Closeout the transaction
-      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
 
       -- Check the timer
       if (r.timer = r.timerSize) then
@@ -146,9 +155,13 @@ begin
             v.timeout := '0';
             v.timer   := (others => '0');
             -- Check for start
-            if (r.trigger = '1') then
+            if (trigger = '1') then
+               -- Cache the configuration
+               v.maxAddr   := maxAddr;
+               v.iteration := iteration;
+               v.timerSize := timerSize;
                -- Next state
-               v.state := RUN_S;
+               v.state     := RUN_S;
             end if;
          ----------------------------------------------------------------------
          when RUN_S =>
@@ -187,7 +200,7 @@ begin
                   end if;
                else
                   -- Increment the back pressure counter
-                  v.backpressureCnt := r.backpressureCnt + 1;
+                  v.backpressure := '1';
                end if;
             end if;
          ----------------------------------------------------------------------
@@ -202,24 +215,12 @@ begin
       ----------------------------------------------------------------------
       end case;
 
-      if (v.trigger = '1') then
-         -- Check if need to terminate frame
-         if (v.trigMaster.tValid = '1') then
-            -- Terminate the frame
-            v.trigMaster.tLast := '1';
-         end if;
-         -- Next state
-         v.state := IDLE_S;
-      end if;
-
       -- Outputs
-      ramAddr        <= v.ramAddr;
-      axilWriteSlave <= r.axilWriteSlave;
-      axilReadSlave  <= r.axilReadSlave;
-      trigMaster     <= r.trigMaster;
+      ramAddr    <= v.ramAddr;
+      trigMaster <= r.trigMaster;
 
       -- Synchronous Reset
-      if (rst = '1') then
+      if (rst160MHz = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -228,9 +229,9 @@ begin
 
    end process comb;
 
-   seq : process (clk) is
+   seq : process (clk160MHz) is
    begin
-      if (rising_edge(clk)) then
+      if (rising_edge(clk160MHz)) then
          r <= rin after TPD_G;
       end if;
    end process seq;

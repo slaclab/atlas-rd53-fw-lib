@@ -24,20 +24,19 @@ use work.AxiStreamPkg.all;
 
 entity AtlasRd53EmuTiming is
    generic (
-      TPD_G           : time             := 1 ns;
-      NUM_AXIS_G      : positive         := 1;
-      ADDR_WIDTH_G    : positive         := 10;
-      SYNTH_MODE_G    : string           := "inferred";
-      MEMORY_TYPE_G   : string           := "block";
-      AXI_BASE_ADDR_G : slv(31 downto 0) := (others => '0'));
+      TPD_G         : time     := 1 ns;
+      NUM_AXIS_G    : positive := 1;
+      ADDR_WIDTH_G  : positive := 10;
+      SYNTH_MODE_G  : string   := "inferred";
+      MEMORY_TYPE_G : string   := "block");
    port (
       -- AXI-Lite Interface (axilClk domain)
       axilClk          : in  sl;
       axilRst          : in  sl;
-      axilReadMaster   : in  AxiLiteReadMasterType;
-      axilReadSlave    : out AxiLiteReadSlaveType;
-      axilWriteMaster  : in  AxiLiteWriteMasterType;
-      axilWriteSlave   : out AxiLiteWriteSlaveType;
+      axilReadMasters  : in  AxiLiteReadMasterArray(1 downto 0);
+      axilReadSlaves   : out AxiLiteReadSlaveArray(1 downto 0);
+      axilWriteMasters : in  AxiLiteWriteMasterArray(1 downto 0);
+      axilWriteSlaves  : out AxiLiteWriteSlaveArray(1 downto 0);
       -- Streaming RD53 Trig Interface (clk160MHz domain)
       clk160MHz        : in  sl;
       rst160MHz        : in  sl;
@@ -47,30 +46,8 @@ end AtlasRd53EmuTiming;
 
 architecture mapping of AtlasRd53EmuTiming is
 
-   constant NUM_AXIL_MASTERS_C : natural := 2;
-
    constant LUT_INDEX_C : natural := 0;
    constant FSM_INDEX_C : natural := 1;
-
-   constant XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXIL_MASTERS_C-1 downto 0) := (
-      LUT_INDEX_C     => (
-         baseAddr     => AXI_BASE_ADDR_G+ x"0000_0000",
-         addrBits     => 16,
-         connectivity => x"FFFF"),
-      FSM_INDEX_C     => (
-         baseAddr     => AXI_BASE_ADDR_G + x"0002_0000",
-         addrBits     => 16,
-         connectivity => x"FFFF"));
-
-   signal regWriteMaster : AxiLiteWriteMasterType;
-   signal regWriteSlave  : AxiLiteWriteSlaveType;
-   signal regReadMaster  : AxiLiteReadMasterType;
-   signal regReadSlave   : AxiLiteReadSlaveType;
-
-   signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXIL_MASTERS_C-1 downto 0);
-   signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXIL_MASTERS_C-1 downto 0);
-   signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXIL_MASTERS_C-1 downto 0);
-   signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXIL_MASTERS_C-1 downto 0);
 
    signal ramAddr : slv(ADDR_WIDTH_G-1 downto 0);
    signal ramData : slv(31 downto 0);
@@ -79,50 +56,6 @@ architecture mapping of AtlasRd53EmuTiming is
    signal emuTimingSlave  : AxiStreamSlaveType;
 
 begin
-
-
-   ----------------------------------------
-   -- Sync AXI-Lite to 160 MHz clock domain
-   ----------------------------------------
-   U_AxiLiteAsync : entity work.AxiLiteAsync
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         -- Slave Port
-         sAxiClk         => axilClk,
-         sAxiClkRst      => axilRst,
-         sAxiReadMaster  => axilReadMaster,
-         sAxiReadSlave   => axilReadSlave,
-         sAxiWriteMaster => axilWriteMaster,
-         sAxiWriteSlave  => axilWriteSlave,
-         -- Master Port
-         mAxiClk         => clk160MHz,
-         mAxiClkRst      => rst160MHz,
-         mAxiReadMaster  => regReadMaster,
-         mAxiReadSlave   => regReadSlave,
-         mAxiWriteMaster => regWriteMaster,
-         mAxiWriteSlave  => regWriteSlave);
-
-   --------------------------
-   -- AXI-Lite: Crossbar Core
-   --------------------------  
-   U_XBAR : entity work.AxiLiteCrossbar
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => NUM_AXIL_MASTERS_C,
-         MASTERS_CONFIG_G   => XBAR_CONFIG_C)
-      port map (
-         axiClk              => clk160MHz,
-         axiClkRst           => rst160MHz,
-         sAxiWriteMasters(0) => regWriteMaster,
-         sAxiWriteSlaves(0)  => regWriteSlave,
-         sAxiReadMasters(0)  => regReadMaster,
-         sAxiReadSlaves(0)   => regReadSlave,
-         mAxiWriteMasters    => axilWriteMasters,
-         mAxiWriteSlaves     => axilWriteSlaves,
-         mAxiReadMasters     => axilReadMasters,
-         mAxiReadSlaves      => axilReadSlaves);
 
    ---------------------------------------------       
    -- AXI-Lite: BRAM trigger bit Pattern storage
@@ -135,13 +68,13 @@ begin
          AXI_WR_EN_G      => true,
          SYS_WR_EN_G      => false,
          SYS_BYTE_WR_EN_G => false,
-         COMMON_CLK_G     => true,
+         COMMON_CLK_G     => false,
          ADDR_WIDTH_G     => ADDR_WIDTH_G,
          DATA_WIDTH_G     => 32)
       port map (
          -- Axi Port
-         axiClk         => clk160MHz,
-         axiRst         => rst160MHz,
+         axiClk         => axilClk,
+         axiRst         => axilRst,
          axiReadMaster  => axilReadMasters(LUT_INDEX_C),
          axiReadSlave   => axilReadSlaves(LUT_INDEX_C),
          axiWriteMaster => axilWriteMasters(LUT_INDEX_C),
@@ -159,15 +92,16 @@ begin
          TPD_G        => TPD_G,
          ADDR_WIDTH_G => ADDR_WIDTH_G)
       port map (
-         -- Clock and reset
-         clk             => clk160MHz,
-         rst             => rst160MHz,
-         -- AXI-Lite Interface
+         -- AXI-Lite Interface (axilClk domain)
+         axilClk         => axilClk,
+         axilRst         => axilRst,
          axilReadMaster  => axilReadMasters(FSM_INDEX_C),
          axilReadSlave   => axilReadSlaves(FSM_INDEX_C),
          axilWriteMaster => axilWriteMasters(FSM_INDEX_C),
          axilWriteSlave  => axilWriteSlaves(FSM_INDEX_C),
-         -- RAM Interface
+         -- RAM Interface (clk160MHz domain)
+         clk160MHz       => clk160MHz,
+         rst160MHz       => rst160MHz,
          ramAddr         => ramAddr,
          ramData         => ramData,
          -- Streaming RD53 Trig Interface (clk160MHz domain)

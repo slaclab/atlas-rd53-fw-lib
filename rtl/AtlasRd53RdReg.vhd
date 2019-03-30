@@ -31,7 +31,7 @@ entity AtlasRd53RdReg is
       clk160MHz    : in  sl;
       rst160MHz    : in  sl;
       -- Data Tap Interface
-      rxStatus     : in  Slv8Array(3 downto 0);
+      rxLinkUp     : in  slv(3 downto 0);
       rxValid      : in  slv(3 downto 0);
       rxHeader     : in  Slv2Array(3 downto 0);
       rxData       : in  Slv64Array(3 downto 0);
@@ -61,7 +61,7 @@ architecture rtl of AtlasRd53RdReg is
 
 begin
 
-   comb : process (debugStream, r, rst160MHz, rxData, rxHeader, rxStatus,
+   comb : process (debugStream, r, rst160MHz, rxData, rxHeader, rxLinkUp,
                    rxValid) is
       variable v      : RegType;
       variable i      : natural;
@@ -94,7 +94,7 @@ begin
       -- Loop through the lanes
       for i in 3 downto 0 loop
          -- Check for valid and not Aurora data 
-         if (rxValid(i) = '1') and (rxStatus(i)(1 downto 0) = "11") and (rxHeader(i) = "10") then
+         if (rxValid(i) = '1') and (rxLinkUp(i) = '1') and (rxHeader(i) = "10") then
             -- Both register fields are of type AutoRead
             if (opCode(i) = x"B4") then
                v.autoDet                      := '1';

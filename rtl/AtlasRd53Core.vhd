@@ -25,13 +25,13 @@ use work.Pgp3Pkg.all;
 
 entity AtlasRd53Core is
    generic (
-      TPD_G         : time    := 1 ns;
+      TPD_G         : time     := 1 ns;
       AXIS_CONFIG_G : AxiStreamConfigType;
       VALID_THOLD_G : positive := 128;  -- Hold until enough to burst into the interleaving MUX
-      SIMULATION_G  : boolean := false;
-      XIL_DEVICE_G  : string  := "7SERIES";
-      SYNTH_MODE_G  : string  := "inferred";
-      MEMORY_TYPE_G : string  := "block");
+      SIMULATION_G  : boolean  := false;
+      XIL_DEVICE_G  : string   := "7SERIES";
+      SYNTH_MODE_G  : string   := "inferred";
+      MEMORY_TYPE_G : string   := "block");
    port (
       -- I/O Delay Interfaces (clk160MHz domain)
       iDelayCtrlRdy   : in  sl;
@@ -44,8 +44,8 @@ entity AtlasRd53Core is
       axilWriteMaster : in  AxiLiteWriteMasterType;
       axilWriteSlave  : out AxiLiteWriteSlaveType;
       -- Streaming Config/Trig Interface (clk160MHz domain)
-      emuTimingMaster   : in  AxiStreamMasterType;
-      emuTimingSlave    : out AxiStreamSlaveType;
+      emuTimingMaster : in  AxiStreamMasterType;
+      emuTimingSlave  : out AxiStreamSlaveType;
       -- Streaming Data Interface (axisClk domain)
       axisClk         : in  sl;
       axisRst         : in  sl;
@@ -58,15 +58,9 @@ entity AtlasRd53Core is
       -- Timing/Trigger Interface
       clk640MHz       : in  sl;
       clk160MHz       : in  sl;
-      clk80MHz        : in  sl;
-      clk40MHz        : in  sl;
       rst640MHz       : in  sl;
       rst160MHz       : in  sl;
-      rst80MHz        : in  sl;
-      rst40MHz        : in  sl;
       refClk300MHz    : in  sl;
-      -- HITOR Interface (clk160MHz domain)
-      hitbus          : out slv(3 downto 0);
       -- RD53 ASIC Serial Ports
       dPortDataP      : in  slv(3 downto 0);
       dPortDataN      : in  slv(3 downto 0);
@@ -97,7 +91,7 @@ architecture mapping of AtlasRd53Core is
    signal invData     : slv(3 downto 0);
    signal invCmd      : sl;
    signal batchSize   : slv(15 downto 0);
-   signal timerConfig : slv(15 downto 0);   
+   signal timerConfig : slv(15 downto 0);
 
 begin
 
@@ -168,27 +162,25 @@ begin
          XIL_DEVICE_G => XIL_DEVICE_G,
          SYNTH_MODE_G => SYNTH_MODE_G)
       port map (
-         -- HITOR Interface
-         hitbus       => hitbus,
          -- RD53 ASIC Serial Ports
-         dPortDataP   => dPortDataP,
-         dPortDataN   => dPortDataN,
+         dPortDataP    => dPortDataP,
+         dPortDataN    => dPortDataN,
          -- Timing Interface
-         clk640MHz    => clk640MHz,
-         clk160MHz    => clk160MHz,
-         rst160MHz    => rst160MHz,
-         -- Control Interface
-         enable       => enable,
-         invData      => invData,
-         linkUp       => linkUp,
-         chBond       => chBond,
-         rxPhyXbar    => rxPhyXbar,
-         debugStream  => debugStream,
+         clk640MHz     => clk640MHz,
+         clk160MHz     => clk160MHz,
+         rst160MHz     => rst160MHz,
+         -- Status/Control Interface
+         iDelayCtrlRdy => iDelayCtrlRdy,
+         enable        => enable,
+         invData       => invData,
+         linkUp        => linkUp,
+         chBond        => chBond,
+         rxPhyXbar     => rxPhyXbar,
+         debugStream   => debugStream,
          -- AutoReg and Read back Interface
-         dataMaster   => dataMaster,
-         configMaster => configMaster,
-         autoReadReg  => autoReadReg);
-
+         dataMaster    => dataMaster,
+         configMaster  => configMaster,
+         autoReadReg   => autoReadReg);
 
    -----------------------         
    -- Outbound Config FIFO
@@ -295,6 +287,6 @@ begin
          mAxisClk    => axisClk,
          mAxisRst    => axisRst,
          mAxisMaster => mDataMaster,
-         mAxisSlave  => mDataSlave); 
+         mAxisSlave  => mDataSlave);
 
 end mapping;
