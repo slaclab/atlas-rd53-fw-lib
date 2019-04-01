@@ -25,8 +25,8 @@ use unisim.vcomponents.all;
 
 entity AuroraRxLane is
    generic (
-      TPD_G : time := 1 ns;
-      XIL_DEVICE_G : string  := "7SERIES");
+      TPD_G        : time   := 1 ns;
+      XIL_DEVICE_G : string := "7SERIES");
    port (
       -- RD53 ASIC Serial Interface
       dPortDataP    : in  sl;
@@ -60,10 +60,19 @@ architecture mapping of AuroraRxLane is
    signal unscramblerValid : sl;
    signal gearboxAligned   : sl;
 
+   signal reset160MHz     : sl;
    signal reset           : sl;
    signal misalignedEvent : sl;
 
 begin
+
+   U_rst160MHz : entity work.RstPipeline
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk    => clk160MHz,
+         rstIn  => rst160MHz,
+         rstOut => reset160MHz);
 
    ------------------
    -- XAPP1017 Module
@@ -77,27 +86,30 @@ begin
          HIGH_PERFORMANCE_MODE => "TRUE",
          DATA_FORMAT           => "PER_CLOCK")
       port map (
-         datain_p(0)           => dPortDataP,
-         datain_n(0)           => dPortDataN,
-         reset                 => rst160MHz,
-         idelay_rdy            => iDelayCtrlRdy,
-         rxclk                 => clk640MHz,
-         system_clk            => clk160MHz,
-         bit_rate_value        => x"1280",  -- TODO make generic
-         rx_lckd               => serDeslock,
-         rx_data(0)            => serDesData(7),
-         rx_data(1)            => serDesData(6),
-         rx_data(2)            => serDesData(5),
-         rx_data(3)            => serDesData(4),
-         rx_data(4)            => serDesData(3),
-         rx_data(5)            => serDesData(2),
-         rx_data(6)            => serDesData(1),
-         rx_data(7)            => serDesData(0));
+         datain_p(0)    => dPortDataP,
+         datain_n(0)    => dPortDataN,
+         reset          => reset160MHz,
+         idelay_rdy     => iDelayCtrlRdy,
+         rxclk          => clk640MHz,
+         system_clk     => clk160MHz,
+         bit_rate_value => x"1280",     -- TODO make generic
+         rx_lckd        => serDeslock,
+         rx_data        => serDesData);
 
    ----------------------------
    -- Support inverted polarity
    ----------------------------
-   serDesDataMask <= serDesData when (polarity = '0') else not(serDesData);
+   process(clk160MHz)
+   begin
+      if rising_edge(clk160MHz) then
+         -- Register to help with timing
+         if polarity = '0' then
+            serDesDataMask <= bitReverse(serDesData) after TPD_G;
+         else
+            serDesDataMask <= bitReverse(not(serDesData)) after TPD_G;
+         end if;
+      end if;
+   end process;
 
    -----------------
    -- Gearbox Module
@@ -109,7 +121,7 @@ begin
          MASTER_WIDTH_G => 66)
       port map (
          clk                      => clk160MHz,
-         rst                      => rst160MHz,
+         rst                      => reset160MHz,
          slip                     => bitslip,
          slaveData                => serDesDataMask,
          slaveValid               => serDeslock,
@@ -127,7 +139,7 @@ begin
          SLIP_WAIT_G => 128)
       port map (
          clk           => clk160MHz,
-         rst           => rst160MHz,
+         rst           => reset160MHz,
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
          slip          => bitslip,
@@ -154,8 +166,6 @@ begin
          outputData     => rxData,
          outputSideband => rxHeader);
 
-   rxLinkUp <= gearboxAligned;
-
    U_Reset : entity work.SynchronizerOneShot
       generic map (
          TPD_G          => TPD_G,
@@ -168,6 +178,13 @@ begin
          dataIn  => gearboxAligned,
          dataOut => misalignedEvent);
 
-   reset <= misalignedEvent or rst160MHz;
+   process(clk160MHz)
+   begin
+      if rising_edge(clk160MHz) then
+         -- Register to help with timing
+         rxLinkUp <= gearboxAligned                 after TPD_G;
+         reset    <= misalignedEvent or reset160MHz after TPD_G;
+      end if;
+   end process;
 
 end mapping;

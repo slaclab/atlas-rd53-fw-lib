@@ -165,10 +165,10 @@ architecture arch_serdes_1_to_468_idelay_ddr of serdes_1_to_468_idelay_ddr is
 
 begin
 
-   rx_lckd        <= not reset;  -- not not_rx_lckd_intd4 and su_locked ;
+   rx_lckd        <= not(reset);  -- not not_rx_lckd_intd4 and su_locked ;
    bit_time_value <= bt_val;
    system_clk_int <= system_clk;        -- theim: use external 
-   not_rxclk      <= not rxclk;
+   not_rxclk      <= not(rxclk);
    clock_sweep    <= clock_sweep_int;
    rxclk_int      <= rxclk;             -- theim: use external;
    bt_val_d2      <= '0' & bt_val(4 downto 1);
@@ -392,6 +392,7 @@ begin
       iserdes_m : ISERDESE3
          generic map (
             DATA_WIDTH     => S,
+            SIM_DEVICE     => XIL_DEVICE_G,
             FIFO_ENABLE    => "FALSE",
             FIFO_SYNC_MODE => "FALSE")
          port map (
@@ -407,7 +408,8 @@ begin
             CLK_B       => not_rxclk,
             CLKDIV      => system_clk_int,
             D           => rx_data_in_md(i),
-            RST         => rst_iserdes,
+            -- RST         => rst_iserdes,
+            RST         => '0',
             FIFO_RD_CLK => '0',
             FIFO_RD_EN  => '0',
             FIFO_EMPTY  => open);
@@ -439,6 +441,7 @@ begin
       iserdes_s : ISERDESE3
          generic map (
             DATA_WIDTH     => S,
+            SIM_DEVICE     => XIL_DEVICE_G,
             FIFO_ENABLE    => "FALSE",
             FIFO_SYNC_MODE => "FALSE")
          port map (
@@ -454,7 +457,8 @@ begin
             CLK_B       => not_rxclk,
             CLKDIV      => system_clk_int,
             D           => rx_data_in_sd(i),
-            RST         => rst_iserdes,
+            -- RST         => rst_iserdes,
+            RST         => '0',
             FIFO_RD_CLK => '0',
             FIFO_RD_EN  => '0',
             FIFO_EMPTY  => open);

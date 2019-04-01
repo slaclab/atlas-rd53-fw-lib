@@ -25,13 +25,14 @@ use work.Pgp3Pkg.all;
 
 entity AtlasRd53Core is
    generic (
-      TPD_G         : time     := 1 ns;
+      TPD_G         : time                  := 1 ns;
       AXIS_CONFIG_G : AxiStreamConfigType;
-      VALID_THOLD_G : positive := 128;  -- Hold until enough to burst into the interleaving MUX
-      SIMULATION_G  : boolean  := false;
-      XIL_DEVICE_G  : string   := "7SERIES";
-      SYNTH_MODE_G  : string   := "inferred";
-      MEMORY_TYPE_G : string   := "block");
+      VALID_THOLD_G : positive              := 128;  -- Hold until enough to burst into the interleaving MUX
+      SIMULATION_G  : boolean               := false;
+      RX_MAPPING_G  : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping 
+      XIL_DEVICE_G  : string                := "7SERIES";
+      SYNTH_MODE_G  : string                := "inferred";
+      MEMORY_TYPE_G : string                := "block");
    port (
       -- I/O Delay Interfaces (clk160MHz domain)
       iDelayCtrlRdy   : in  sl;
@@ -58,9 +59,7 @@ entity AtlasRd53Core is
       -- Timing/Trigger Interface
       clk640MHz       : in  sl;
       clk160MHz       : in  sl;
-      rst640MHz       : in  sl;
       rst160MHz       : in  sl;
-      refClk300MHz    : in  sl;
       -- RD53 ASIC Serial Ports
       dPortDataP      : in  slv(3 downto 0);
       dPortDataN      : in  slv(3 downto 0);

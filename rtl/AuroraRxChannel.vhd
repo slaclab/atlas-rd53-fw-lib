@@ -123,8 +123,8 @@ begin
             polarity      => invData(i),
             iDelayCtrlRdy => iDelayCtrlRdy,
             -- Timing Interface
-            clk640MHz     => clk160MHz,
-            clk160MHz     => clk640MHz,
+            clk640MHz     => clk640MHz,
+            clk160MHz     => clk160MHz,
             rst160MHz     => rst160MHz,
             -- Output
             rxLinkUp      => rxLinkUpOut(i),
@@ -148,6 +148,7 @@ begin
             TPD_G           => TPD_G,
             GEN_SYNC_FIFO_G => true,
             FWFT_EN_G       => true,
+            PIPE_STAGES_G   => 1,
             SYNTH_MODE_G    => SYNTH_MODE_G,
             MEMORY_TYPE_G   => "block",
             DATA_WIDTH_G    => 66,
@@ -303,6 +304,7 @@ begin
 
       -- Registered Outputs
       dataMaster <= r.dataMaster;
+      linkUp     <= rxLinkUp;
       chBond     <= r.chBond;
       fifoRst    <= r.fifoRst(0);
 

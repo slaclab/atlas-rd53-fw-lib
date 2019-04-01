@@ -23,7 +23,8 @@ use work.AxiLitePkg.all;
 
 entity AtlasRd53Ctrl is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G        : time                  := 1 ns;
+      RX_MAPPING_G : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11"));  -- Set the default RX PHY lane mapping 
    port (
       -- Monitoring Interface (clk160MHz domain)
       clk160MHz       : in  sl;
@@ -75,7 +76,7 @@ architecture rtl of AtlasRd53Ctrl is
       timerConfig    => (others => '0'),
       pllRst         => '0',
       debugStream    => '0',
-      rxPhyXbar      => (0 => "00", 1 => "01", 2 => "10", 3 => "11"),
+      rxPhyXbar      => RX_MAPPING_G,
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
       cntRst         => '1',
