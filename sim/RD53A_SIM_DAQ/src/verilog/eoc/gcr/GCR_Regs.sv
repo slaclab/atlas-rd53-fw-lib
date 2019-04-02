@@ -646,7 +646,8 @@ assign OutDataGC[60][15:2] = 14'b0; // Assign most significant bits to zero
 // Address:           61
 // Field Description: Output channel and driver configuration
 //
-GCR_reg #(.WIDTH(9),.ResetValue(9'b00_0_0001_00) ) GCR_61 (
+// GCR_reg #(.WIDTH(9),.ResetValue(9'b00_0_0001_00) ) GCR_61 (
+GCR_reg #(.WIDTH(9),.ResetValue(9'b00_0_1111_00) ) GCR_61 ( // Changing ActiveLanes default to 0xF (LLR - 02APRIL2019)
     // Register is Read/Write
     .OutData(OutDataGC[61][8:0]), .Clk(ClkCmd), .Reset_b(GC_Reset_Async_b),.Wr(WrGC[61]),.InData(RegDataCmd[8:0]));
 assign OutDataGC[61][15:9] = 7'b0; // Assign most significant bits to zero
