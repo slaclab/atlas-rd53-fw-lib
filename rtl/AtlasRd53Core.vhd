@@ -99,7 +99,8 @@ begin
    -------------------------
    U_Ctrl : entity work.AtlasRd53Ctrl
       generic map (
-         TPD_G => TPD_G)
+         TPD_G        => TPD_G,
+         RX_MAPPING_G => RX_MAPPING_G)
       port map (
          -- Monitoring Interface (clk160MHz domain)
          clk160MHz       => clk160MHz,

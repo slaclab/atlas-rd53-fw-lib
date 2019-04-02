@@ -63,6 +63,9 @@ architecture mapping of AuroraRxLane is
    signal reset160MHz     : sl;
    signal reset           : sl;
    signal misalignedEvent : sl;
+   
+   signal header      : slv(1 downto 0);
+   signal data        : slv(63 downto 0);   
 
 begin
 
@@ -99,17 +102,7 @@ begin
    ----------------------------
    -- Support inverted polarity
    ----------------------------
-   process(clk160MHz)
-   begin
-      if rising_edge(clk160MHz) then
-         -- Register to help with timing
-         if polarity = '0' then
-            serDesDataMask <= bitReverse(serDesData) after TPD_G;
-         else
-            serDesDataMask <= bitReverse(not(serDesData)) after TPD_G;
-         end if;
-      end if;
-   end process;
+   serDesDataMask <= serDesData when(polarity = '0') else not(serDesData);
 
    -----------------
    -- Gearbox Module
@@ -136,7 +129,7 @@ begin
    U_GearboxAligner : entity work.Pgp3RxGearboxAligner
       generic map (
          TPD_G       => TPD_G,
-         SLIP_WAIT_G => 128)
+         SLIP_WAIT_G => 32)
       port map (
          clk           => clk160MHz,
          rst           => reset160MHz,
@@ -163,8 +156,11 @@ begin
          inputData      => phyRxData,
          inputSideband  => phyRxHeader,
          outputValid    => rxValid,
-         outputData     => rxData,
-         outputSideband => rxHeader);
+         outputData     => data,
+         outputSideband => header);
+         
+   rxHeader <= bitReverse(header);
+   rxData   <= bitReverse(data);
 
    U_Reset : entity work.SynchronizerOneShot
       generic map (

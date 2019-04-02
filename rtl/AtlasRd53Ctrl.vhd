@@ -193,9 +193,7 @@ begin
          clk     => clk160MHz,
          dataIn  => r.invCmd,
          dataOut => invCmd);
-
-
-
+         
    U_debugStream : entity work.Synchronizer
       generic map (
          TPD_G => TPD_G)
