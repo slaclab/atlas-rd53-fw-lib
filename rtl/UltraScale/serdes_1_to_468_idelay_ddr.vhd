@@ -64,6 +64,7 @@ use unisim.vcomponents.all;
 
 entity serdes_1_to_468_idelay_ddr is
    generic (
+      TPD_G                 : time    := 1 ns;
       XIL_DEVICE_G          : string  := "ULTRASCALE";
       S                     : integer := 8;  -- Set the serdes factor to 4, 6 or 8
       D                     : integer := 8;  -- Set the number of inputs
@@ -134,8 +135,8 @@ architecture arch_serdes_1_to_468_idelay_ddr of serdes_1_to_468_idelay_ddr is
    signal mdataout           : std_logic_vector(S*D-1 downto 0);
    signal mdataoutd          : std_logic_vector(S*D-1 downto 0);
    signal sdataout           : std_logic_vector(S*D-1 downto 0);
-   signal s_serdes           : std_logic_vector(8*D-1 downto 0);
-   signal m_serdes           : std_logic_vector(8*D-1 downto 0);
+   signal m_serdes           : std_logic_vector(8*D-1 downto 0) := (others => '0');
+   signal s_serdes           : std_logic_vector(8*D-1 downto 0) := (others => '0');
    signal system_clk_int     : std_logic;
    signal data_different     : std_logic;
    signal bt_val             : std_logic_vector(4 downto 0);
@@ -148,9 +149,7 @@ architecture arch_serdes_1_to_468_idelay_ddr of serdes_1_to_468_idelay_ddr is
    signal rx_clk_in_p        : std_logic;
    signal rx_clk_in_pc       : std_logic;
    signal rx_clk_in_pd       : std_logic;
-   signal rxclk_int          : std_logic;
    signal rst_iserdes        : std_logic;
-   signal not_rxclk          : std_logic;
    signal clock_sweep_int    : std_logic_vector(31 downto 0);
    signal zflag              : std_logic;
    signal del_mech           : std_logic;
@@ -168,9 +167,7 @@ begin
    rx_lckd        <= not(reset);  -- not not_rx_lckd_intd4 and su_locked ;
    bit_time_value <= bt_val;
    system_clk_int <= system_clk;        -- theim: use external 
-   not_rxclk      <= not(rxclk);
    clock_sweep    <= clock_sweep_int;
-   rxclk_int      <= rxclk;             -- theim: use external;
    bt_val_d2      <= '0' & bt_val(4 downto 1);
    cdataout       <= m_serdes(3 downto 0);  -- theim: hardcoded
 
@@ -391,10 +388,13 @@ begin
 
       iserdes_m : ISERDESE3
          generic map (
-            DATA_WIDTH     => S,
-            SIM_DEVICE     => XIL_DEVICE_G,
-            FIFO_ENABLE    => "FALSE",
-            FIFO_SYNC_MODE => "FALSE")
+            DATA_WIDTH        => S,
+            FIFO_ENABLE       => "FALSE",
+            FIFO_SYNC_MODE    => "FALSE",
+            IS_CLK_B_INVERTED => '1',
+            IS_CLK_INVERTED   => '0',
+            IS_RST_INVERTED   => '0',
+            SIM_DEVICE        => XIL_DEVICE_G)
          port map (
             Q(7)        => m_serdes(S*i+7),
             Q(6)        => m_serdes(S*i+6),
@@ -404,8 +404,8 @@ begin
             Q(2)        => m_serdes(S*i+2),
             Q(1)        => m_serdes(S*i+1),
             Q(0)        => m_serdes(S*i+0),
-            CLK         => rxclk_int,
-            CLK_B       => not_rxclk,
+            CLK         => rxclk,
+            CLK_B       => rxclk,
             CLKDIV      => system_clk_int,
             D           => rx_data_in_md(i),
             RST         => rst_iserdes,
@@ -439,10 +439,13 @@ begin
 
       iserdes_s : ISERDESE3
          generic map (
-            DATA_WIDTH     => S,
-            SIM_DEVICE     => XIL_DEVICE_G,
-            FIFO_ENABLE    => "FALSE",
-            FIFO_SYNC_MODE => "FALSE")
+            DATA_WIDTH        => S,
+            FIFO_ENABLE       => "FALSE",
+            FIFO_SYNC_MODE    => "FALSE",
+            IS_CLK_B_INVERTED => '1',
+            IS_CLK_INVERTED   => '0',
+            IS_RST_INVERTED   => '0',
+            SIM_DEVICE        => XIL_DEVICE_G)
          port map (
             Q(7)        => s_serdes(S*i+7),
             Q(6)        => s_serdes(S*i+6),
@@ -452,8 +455,8 @@ begin
             Q(2)        => s_serdes(S*i+2),
             Q(1)        => s_serdes(S*i+1),
             Q(0)        => s_serdes(S*i+0),
-            CLK         => rxclk_int,
-            CLK_B       => not_rxclk,
+            CLK         => rxclk,
+            CLK_B       => rxclk,
             CLKDIV      => system_clk_int,
             D           => rx_data_in_sd(i),
             RST         => rst_iserdes,
