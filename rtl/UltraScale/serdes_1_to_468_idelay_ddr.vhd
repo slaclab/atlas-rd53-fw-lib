@@ -340,8 +340,8 @@ begin
 
    -- Data bit Receivers 
    loop0 : for i in 0 to D-1 generate
-      attribute IODELAY_GROUP of idelay_m : label is "aurora";
-      attribute IODELAY_GROUP of idelay_s : label is "aurora";
+      attribute IODELAY_GROUP of idelay_m : label is "rd53_aurora";
+      attribute IODELAY_GROUP of idelay_s : label is "rd53_aurora";
    begin
       loop1 : for j in 0 to S-1 generate  -- Assign data bits to correct serdes according to required format
          loop1a : if DATA_FORMAT = "PER_CLOCK" generate

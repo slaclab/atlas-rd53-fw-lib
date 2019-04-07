@@ -17,7 +17,6 @@ loadRuckusTcl "$::DIR_PATH/sim"
 
 # Load the source code
 loadSource      -dir "$::DIR_PATH/rtl"
-loadConstraints -dir "$::DIR_PATH/xdc"
 
 # Get the family type
 set family [getFpgaFamily]
