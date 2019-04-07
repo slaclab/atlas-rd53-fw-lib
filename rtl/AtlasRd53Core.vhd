@@ -271,9 +271,9 @@ begin
          VALID_BURST_MODE_G  => true,
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
-         MEMORY_TYPE_G       => "block",
+         MEMORY_TYPE_G       => MEMORY_TYPE_G,
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => 9,
+         FIFO_ADDR_WIDTH_G   => log2(4*VALID_THOLD_G),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
