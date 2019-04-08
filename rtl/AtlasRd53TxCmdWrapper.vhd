@@ -29,6 +29,7 @@ entity AtlasRd53TxCmdWrapper is
    generic (
       TPD_G         : time   := 1 ns;
       AXIS_CONFIG_G : AxiStreamConfigType;
+      XIL_DEVICE_G  : string := "7SERIES";
       SYNTH_MODE_G  : string := "inferred";
       MEMORY_TYPE_G : string := "block");
    port (
@@ -45,6 +46,7 @@ entity AtlasRd53TxCmdWrapper is
       clk160MHz       : in  sl;
       rst160MHz       : in  sl;
       -- Command Serial Interface (clk160MHz domain)
+      dlyCmd          : in  sl;
       invCmd          : in  sl;
       cmdOutP         : out sl;
       cmdOutN         : out sl);
@@ -65,8 +67,13 @@ architecture rtl of AtlasRd53TxCmdWrapper is
 
    signal rdyL : sl;
 
-   signal cmd     : sl;
-   signal cmdMask : sl;
+   signal cmd        : sl;
+   signal cmdMask    : sl;
+   signal cmdMaskDly : sl;
+
+   signal D1        : sl;
+   signal D2        : sl;
+   signal cmdOutReg : sl;
 
 begin
 
@@ -171,15 +178,59 @@ begin
          -- Serial Output Interface
          cmdOut    => cmd);
 
+   ----------------------------------
+   -- Set the command polarity output
+   ----------------------------------
    cmdMask <= cmd xor invCmd;
 
-   U_ODDR : entity work.OutputBufferReg
-      generic map (
-         TPD_G       => TPD_G,
-         DIFF_PAIR_G => true)
+   --------------------------
+   -- Generate a delayed copy 
+   --------------------------
+   process(clk160MHz)
+   begin
+      if rising_edge(clk160MHz) then
+         cmdMaskDly <= cmdMask after TPD_G;
+      end if;
+   end process;
+
+   -------------------------------------------------------------------------------------
+   -- Add the ability to deskew the CMD with respect to the external re-timing flip-flop
+   -------------------------------------------------------------------------------------
+   D1 <= cmdMask when (dlyCmd = '0') else cmdMaskDly;
+   D2 <= cmdMask;
+
+   -----------------------------
+   -- Output DDR Register Module
+   -----------------------------
+   GEN_7SERIES : if (XIL_DEVICE_G = "7SERIES") generate
+      U_OutputReg : ODDR
+         generic map (
+            DDR_CLK_EDGE => "SAME_EDGE")
+         port map (
+            C  => clk160MHz,
+            Q  => cmdOutReg,
+            CE => '1',
+            D1 => D1,
+            D2 => D2,
+            R  => '0',
+            S  => '0');
+   end generate;
+
+   GEN_ULTRASCALE : if (XIL_DEVICE_G = "ULTRASCALE") or (XIL_DEVICE_G = "ULTRASCALE_PLUS") generate
+      U_OutputReg : ODDRE1
+         generic map (
+            SIM_DEVICE => XIL_DEVICE_G)
+         port map (
+            C  => clk160MHz,
+            Q  => cmdOutReg,
+            D1 => D1,
+            D2 => D2,
+            SR => '0');
+   end generate;
+
+   U_OBUFDS : OBUFDS
       port map (
-         C  => clk160MHz,
-         I  => cmdMask,
+         I  => cmdOutReg,
          O  => cmdOutP,
          OB => cmdOutN);
 

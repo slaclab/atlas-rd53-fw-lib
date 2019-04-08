@@ -84,11 +84,13 @@ architecture mapping of AtlasRd53Core is
    signal autoReadReg : Slv32Array(3 downto 0);
    signal enable      : slv(3 downto 0);
    signal linkUp      : slv(3 downto 0);
+   signal selectRate  : slv(1 downto 0);
    signal rxPhyXbar   : Slv2Array(3 downto 0);
    signal chBond      : sl;
    signal debugStream : sl;
    signal invData     : slv(3 downto 0);
    signal invCmd      : sl;
+   signal dlyCmd      : sl;
    signal batchSize   : slv(15 downto 0);
    signal timerConfig : slv(15 downto 0);
 
@@ -111,8 +113,10 @@ begin
          chBond          => chBond,
          linkUp          => linkUp,
          enable          => enable,
+         selectRate      => selectRate,
          invData         => invData,
          invCmd          => invCmd,
+         dlyCmd          => dlyCmd,
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
          pllRst          => pllRst,
@@ -133,6 +137,7 @@ begin
       generic map (
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => AXIS_CONFIG_G,
+         XIL_DEVICE_G  => XIL_DEVICE_G,
          SYNTH_MODE_G  => SYNTH_MODE_G,
          MEMORY_TYPE_G => MEMORY_TYPE_G)
       port map (
@@ -149,6 +154,7 @@ begin
          rst160MHz       => rst160MHz,
          -- Command Serial Interface (clk160MHz domain)
          invCmd          => invCmd,
+         dlyCmd          => dlyCmd,
          cmdOutP         => dPortCmdP,
          cmdOutN         => dPortCmdN);
 
@@ -172,6 +178,7 @@ begin
          -- Status/Control Interface
          iDelayCtrlRdy => iDelayCtrlRdy,
          enable        => enable,
+         selectRate    => selectRate,
          invData       => invData,
          linkUp        => linkUp,
          chBond        => chBond,

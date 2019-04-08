@@ -77,8 +77,8 @@ entity serdes_1_to_468_idelay_ddr is
       idelay_rdy     : in  std_logic;   -- input delays are ready
       rxclk          : in  std_logic;   -- Global/BUFIO rx clock network
       system_clk     : in  std_logic;   -- Global/Regional clock output
-      bit_rate_value : in  std_logic_vector(15 downto 0);  -- Bit rate in Mbps, eg X"0585
-      dcd_correct    : in  std_logic := '0';  -- '0' = square, '1' = assume 10% DCD
+      bit_rate_value : in  std_logic_vector(15 downto 0) := x"1280";  -- Bit rate in Mbps, eg X"0585
+      dcd_correct    : in  std_logic                     := '0';  -- '0' = square, '1' = assume 10% DCD
       rx_lckd        : out std_logic;   -- 
       rx_data        : out std_logic_vector((S*D)-1 downto 0);  -- Output data
       bit_time_value : out std_logic_vector(4 downto 0);  -- Calculated bit time value for slave devices

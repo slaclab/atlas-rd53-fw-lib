@@ -35,8 +35,10 @@ entity AtlasRd53Ctrl is
       chBond          : in  sl;
       linkUp          : in  slv(3 downto 0);
       enable          : out slv(3 downto 0);
+      selectRate      : out slv(1 downto 0);
       invData         : out slv(3 downto 0);
       invCmd          : out sl;
+      dlyCmd          : out sl;
       rxPhyXbar       : out Slv2Array(3 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
@@ -62,8 +64,10 @@ architecture rtl of AtlasRd53Ctrl is
       pllRst         : sl;
       debugStream    : sl;
       rxPhyXbar      : Slv2Array(3 downto 0);
+      selectRate     : slv(1 downto 0);
       invData        : slv(3 downto 0);
       invCmd         : sl;
+      dlyCmd         : sl;
       cntRst         : sl;
       rollOverEn     : slv(STATUS_SIZE_C-1 downto 0);
       enable         : slv(3 downto 0);
@@ -77,8 +81,10 @@ architecture rtl of AtlasRd53Ctrl is
       pllRst         => '0',
       debugStream    => '0',
       rxPhyXbar      => RX_MAPPING_G,
+      selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
+      dlyCmd         => '0',
       cntRst         => '1',
       rollOverEn     => (others => '0'),
       enable         => x"F",
@@ -126,11 +132,13 @@ begin
       axiSlaveRegister (axilEp, x"800", 0, v.enable);
       axiSlaveRegister (axilEp, x"804", 0, v.invData);
       axiSlaveRegister (axilEp, x"808", 0, v.invCmd);
+      axiSlaveRegister (axilEp, x"808", 1, v.dlyCmd);
 
       axiSlaveRegister (axilEp, x"80C", 0, v.rxPhyXbar(0));
       axiSlaveRegister (axilEp, x"80C", 2, v.rxPhyXbar(1));
       axiSlaveRegister (axilEp, x"80C", 4, v.rxPhyXbar(2));
       axiSlaveRegister (axilEp, x"80C", 6, v.rxPhyXbar(3));
+      axiSlaveRegister (axilEp, x"80C", 8, v.selectRate);
 
       axiSlaveRegister (axilEp, x"810", 0, v.debugStream);
 
@@ -177,6 +185,15 @@ begin
          dataIn  => r.enable,
          dataOut => enable);
 
+   U_selectRate : entity work.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 2)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.selectRate,
+         dataOut => selectRate);
+
    U_invData : entity work.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
@@ -193,7 +210,15 @@ begin
          clk     => clk160MHz,
          dataIn  => r.invCmd,
          dataOut => invCmd);
-         
+
+   U_dlyCmd : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.dlyCmd,
+         dataOut => dlyCmd);
+
    U_debugStream : entity work.Synchronizer
       generic map (
          TPD_G => TPD_G)

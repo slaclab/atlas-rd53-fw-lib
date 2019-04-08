@@ -109,8 +109,18 @@ class Ctrl(pr.Device):
             description  = 'Invert the serial CMD bit',
             offset       = 0x808,
             bitSize      = 1, 
+            bitOffset    = 0,
             mode         = 'RW',
-        ))        
+        )) 
+
+        self.add(pr.RemoteVariable(
+            name         = 'DlyCmd', 
+            description  = '0x1 add 3.125 delay on the CMD output (used to deskew the CMD from discrete re-timing flip-flop IC)',
+            offset       = 0x808,
+            bitSize      = 1, 
+            bitOffset    = 1,
+            mode         = 'RW',
+        ))         
         
         for i in range(4):
             self.add(pr.RemoteVariable(
@@ -120,7 +130,16 @@ class Ctrl(pr.Device):
                 bitOffset    = (2*i),
                 bitSize      = 2, 
                 mode         = 'RW',
-            ))             
+            )) 
+
+        self.add(pr.RemoteVariable(
+            name         = 'SelectRate', 
+            description  = 'SelectRate and RD53.SEL_SER_CLK[2:0] must be the same (default of 0x0 = 1.28Gbps)',
+            offset       = 0x80C,
+            bitSize      = 2, 
+            bitOffset    = 8,
+            mode         = 'RW',
+        ))               
         
         self.add(pr.RemoteVariable(
             name         = 'DebugStream', 

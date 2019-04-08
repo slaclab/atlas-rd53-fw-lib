@@ -78,8 +78,8 @@ entity serdes_1_to_468_idelay_ddr is
       idelay_rdy     : in  std_logic;   -- input delays are ready
       rxclk          : in  std_logic;   -- Global/BUFIO rx clock network
       system_clk     : in  std_logic;   -- Global/Regional clock output
-      bit_rate_value : in  std_logic_vector(15 downto 0);  -- Bit rate in Mbps, eg X"0585
-      dcd_correct    : in  std_logic := '0';  -- '0' = square, '1' = assume 10% DCD
+      bit_rate_value : in  std_logic_vector(15 downto 0) := x"1280";  -- Bit rate in Mbps, eg X"0585
+      dcd_correct    : in  std_logic                     := '0';  -- '0' = square, '1' = assume 10% DCD
       rx_lckd        : out std_logic;   -- 
       rx_data        : out std_logic_vector((S*D)-1 downto 0);  -- Output data
       bit_time_value : out std_logic_vector(4 downto 0);  -- Calculated bit time value for slave devices
@@ -137,6 +137,8 @@ architecture arch_serdes_1_to_468_idelay_ddr of serdes_1_to_468_idelay_ddr is
    signal sdataout           : std_logic_vector(S*D-1 downto 0);
    signal m_serdes           : std_logic_vector(8*D-1 downto 0) := (others => '0');
    signal s_serdes           : std_logic_vector(8*D-1 downto 0) := (others => '0');
+   signal m_serdesPhy        : std_logic_vector(8*D-1 downto 0) := (others => '0');
+   signal s_serdesPhy        : std_logic_vector(8*D-1 downto 0) := (others => '0');   
    signal system_clk_int     : std_logic;
    signal data_different     : std_logic;
    signal bt_val             : std_logic_vector(4 downto 0);
@@ -364,7 +366,8 @@ begin
 
       idelay_m : IDELAYE3
          generic map (
-            DELAY_FORMAT     => "TIME",
+            -- DELAY_FORMAT     => "TIME",
+            DELAY_FORMAT     => "COUNT",
             SIM_DEVICE       => XIL_DEVICE_G,
             DELAY_VALUE      => 0,
             REFCLK_FREQUENCY => REF_FREQ,
@@ -379,7 +382,8 @@ begin
             DATAIN      => '0',
             IDATAIN     => rx_data_in_m(i),
             LOAD        => '1',
-            EN_VTC      => '1',
+            -- EN_VTC      => '1',
+            EN_VTC      => '0',
             RST         => '0',
             CASC_IN     => '0',
             CASC_RETURN => '0',
@@ -396,14 +400,14 @@ begin
             IS_RST_INVERTED   => '0',
             SIM_DEVICE        => XIL_DEVICE_G)
          port map (
-            Q(7)        => m_serdes(S*i+7),
-            Q(6)        => m_serdes(S*i+6),
-            Q(5)        => m_serdes(S*i+5),
-            Q(4)        => m_serdes(S*i+4),
-            Q(3)        => m_serdes(S*i+3),
-            Q(2)        => m_serdes(S*i+2),
-            Q(1)        => m_serdes(S*i+1),
-            Q(0)        => m_serdes(S*i+0),
+            Q(7)        => m_serdesPhy(S*i+7),
+            Q(6)        => m_serdesPhy(S*i+6),
+            Q(5)        => m_serdesPhy(S*i+5),
+            Q(4)        => m_serdesPhy(S*i+4),
+            Q(3)        => m_serdesPhy(S*i+3),
+            Q(2)        => m_serdesPhy(S*i+2),
+            Q(1)        => m_serdesPhy(S*i+1),
+            Q(0)        => m_serdesPhy(S*i+0),
             CLK         => rxclk,
             CLK_B       => rxclk,
             CLKDIV      => system_clk_int,
@@ -415,7 +419,8 @@ begin
 
       idelay_s : IDELAYE3
          generic map (
-            DELAY_FORMAT     => "TIME",
+            -- DELAY_FORMAT     => "TIME",
+            DELAY_FORMAT     => "COUNT",
             SIM_DEVICE       => XIL_DEVICE_G,
             DELAY_VALUE      => 0,
             REFCLK_FREQUENCY => REF_FREQ,
@@ -430,7 +435,8 @@ begin
             DATAIN      => '0',
             IDATAIN     => rx_data_in_s(i),
             LOAD        => '1',
-            EN_VTC      => '1',
+            -- EN_VTC      => '1',
+            EN_VTC      => '0',
             RST         => '0',
             CASC_IN     => '0',
             CASC_RETURN => '0',
@@ -447,14 +453,14 @@ begin
             IS_RST_INVERTED   => '0',
             SIM_DEVICE        => XIL_DEVICE_G)
          port map (
-            Q(7)        => s_serdes(S*i+7),
-            Q(6)        => s_serdes(S*i+6),
-            Q(5)        => s_serdes(S*i+5),
-            Q(4)        => s_serdes(S*i+4),
-            Q(3)        => s_serdes(S*i+3),
-            Q(2)        => s_serdes(S*i+2),
-            Q(1)        => s_serdes(S*i+1),
-            Q(0)        => s_serdes(S*i+0),
+            Q(7)        => s_serdesPhy(S*i+7),
+            Q(6)        => s_serdesPhy(S*i+6),
+            Q(5)        => s_serdesPhy(S*i+5),
+            Q(4)        => s_serdesPhy(S*i+4),
+            Q(3)        => s_serdesPhy(S*i+3),
+            Q(2)        => s_serdesPhy(S*i+2),
+            Q(1)        => s_serdesPhy(S*i+1),
+            Q(0)        => s_serdesPhy(S*i+0),
             CLK         => rxclk,
             CLK_B       => rxclk,
             CLKDIV      => system_clk_int,
@@ -481,5 +487,16 @@ begin
       end generate;
 
    end generate;
+   
+   process(system_clk_int)
+   begin
+      if rising_edge(system_clk_int) then
+         -- Register to help make timing
+         m_serdes <= m_serdesPhy after TPD_G;
+         s_serdes <= s_serdesPhy after TPD_G;
+      end if;
+   end process;
+      
+   
 
 end arch_serdes_1_to_468_idelay_ddr;

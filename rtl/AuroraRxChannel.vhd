@@ -39,6 +39,7 @@ entity AuroraRxChannel is
       iDelayCtrlRdy : in  sl;
       enable        : in  slv(3 downto 0);
       invData       : in  slv(3 downto 0);
+      selectRate    : in  slv(1 downto 0);
       linkUp        : out slv(3 downto 0);
       chBond        : out sl;
       rxPhyXbar     : in  Slv2Array(3 downto 0);
@@ -121,6 +122,7 @@ begin
             dPortDataP    => dPortDataP(i),
             dPortDataN    => dPortDataN(i),
             polarity      => invData(i),
+            selectRate    => selectRate,
             iDelayCtrlRdy => iDelayCtrlRdy,
             -- Timing Interface
             clk640MHz     => clk640MHz,
