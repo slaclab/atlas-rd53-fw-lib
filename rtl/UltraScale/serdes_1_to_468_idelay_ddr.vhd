@@ -364,7 +364,7 @@ begin
 
       idelay_m : IDELAYE3
          generic map (
-            DELAY_FORMAT     => "COUNT",
+            DELAY_FORMAT     => "TIME",
             SIM_DEVICE       => XIL_DEVICE_G,
             DELAY_VALUE      => 0,
             REFCLK_FREQUENCY => REF_FREQ,
@@ -379,7 +379,7 @@ begin
             DATAIN      => '0',
             IDATAIN     => rx_data_in_m(i),
             LOAD        => '1',
-            EN_VTC      => '0',
+            EN_VTC      => '1',
             RST         => '0',
             CASC_IN     => '0',
             CASC_RETURN => '0',
@@ -415,7 +415,7 @@ begin
 
       idelay_s : IDELAYE3
          generic map (
-            DELAY_FORMAT     => "COUNT",
+            DELAY_FORMAT     => "TIME",
             SIM_DEVICE       => XIL_DEVICE_G,
             DELAY_VALUE      => 0,
             REFCLK_FREQUENCY => REF_FREQ,
@@ -430,7 +430,7 @@ begin
             DATAIN      => '0',
             IDATAIN     => rx_data_in_s(i),
             LOAD        => '1',
-            EN_VTC      => '0',
+            EN_VTC      => '1',
             RST         => '0',
             CASC_IN     => '0',
             CASC_RETURN => '0',
