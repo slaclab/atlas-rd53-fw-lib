@@ -21,6 +21,7 @@ use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
+use work.SsiPkg.all;
 
 entity AtlasRd53EmuTiming is
    generic (
@@ -38,8 +39,8 @@ entity AtlasRd53EmuTiming is
       axilWriteMasters : in  AxiLiteWriteMasterArray(1 downto 0);
       axilWriteSlaves  : out AxiLiteWriteSlaveArray(1 downto 0);
       -- Streaming RD53 Trig Interface (clk160MHz domain)
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk160MHz        : in  slv(NUM_AXIS_G-1 downto 0);
+      rst160MHz        : in  slv(NUM_AXIS_G-1 downto 0);
       emuTimingMasters : out AxiStreamMasterArray(NUM_AXIS_G-1 downto 0);
       emuTimingSlaves  : in  AxiStreamSlaveArray(NUM_AXIS_G-1 downto 0));
 end AtlasRd53EmuTiming;
@@ -54,6 +55,9 @@ architecture mapping of AtlasRd53EmuTiming is
 
    signal emuTimingMaster : AxiStreamMasterType;
    signal emuTimingSlave  : AxiStreamSlaveType;
+
+   signal txMasters : AxiStreamMasterArray(NUM_AXIS_G-1 downto 0);
+   signal txSlaves  : AxiStreamSlaveArray(NUM_AXIS_G-1 downto 0);
 
 begin
 
@@ -80,7 +84,7 @@ begin
          axiWriteMaster => axilWriteMasters(LUT_INDEX_C),
          axiWriteSlave  => axilWriteSlaves(LUT_INDEX_C),
          -- Standard Port
-         clk            => clk160MHz,
+         clk            => clk160MHz(0),
          addr           => ramAddr,
          dout           => ramData);
 
@@ -100,8 +104,8 @@ begin
          axilWriteMaster => axilWriteMasters(FSM_INDEX_C),
          axilWriteSlave  => axilWriteSlaves(FSM_INDEX_C),
          -- RAM Interface (clk160MHz domain)
-         clk160MHz       => clk160MHz,
-         rst160MHz       => rst160MHz,
+         clk160MHz       => clk160MHz(0),
+         rst160MHz       => rst160MHz(0),
          ramAddr         => ramAddr,
          ramData         => ramData,
          -- Streaming RD53 Trig Interface (clk160MHz domain)
@@ -119,13 +123,44 @@ begin
          OUTPUT_PIPE_STAGES_G => 1)
       port map (
          -- Clock and reset
-         axisClk      => clk160MHz,
-         axisRst      => rst160MHz,
+         axisClk      => clk160MHz(0),
+         axisRst      => rst160MHz(0),
          -- Slave
          sAxisMaster  => emuTimingMaster,
          sAxisSlave   => emuTimingSlave,
          -- Masters
-         mAxisMasters => emuTimingMasters,
-         mAxisSlaves  => emuTimingSlaves);
+         mAxisMasters => txMasters,
+         mAxisSlaves  => txSlaves);
+
+   GEN_mDP :
+   for i in NUM_AXIS_G-1 downto 0 generate
+      ASYNC_FIFO : entity work.AxiStreamFifoV2
+         generic map (
+            -- General Configurations
+            TPD_G               => TPD_G,
+            PIPE_STAGES_G       => 0,
+            SLAVE_READY_EN_G    => true,
+            VALID_THOLD_G       => 1,
+            -- FIFO configurations
+            SYNTH_MODE_G        => SYNTH_MODE_G,
+            MEMORY_TYPE_G       => "distributed",
+            GEN_SYNC_FIFO_G     => ite(i = 0, true, false),
+            CASCADE_SIZE_G      => 1,
+            FIFO_ADDR_WIDTH_G   => 4,
+            -- AXI Stream Port Configurations
+            SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
+            MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+         port map (
+            -- Slave Port
+            sAxisClk    => clk160MHz(0),
+            sAxisRst    => rst160MHz(0),
+            sAxisMaster => txMasters(i),
+            sAxisSlave  => txSlaves(i),
+            -- Master Port
+            mAxisClk    => clk160MHz(i),
+            mAxisRst    => rst160MHz(i),
+            mAxisMaster => emuTimingMasters(i),
+            mAxisSlave  => emuTimingSlaves(i));
+   end generate GEN_mDP;
 
 end mapping;
