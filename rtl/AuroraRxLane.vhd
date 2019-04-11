@@ -25,31 +25,35 @@ use unisim.vcomponents.all;
 
 entity AuroraRxLane is
    generic (
-      TPD_G        : time   := 1 ns;
-      XIL_DEVICE_G : string := "7SERIES");
+      TPD_G           : time   := 1 ns;
+      IODELAY_GROUP_G : string := "rd53_aurora";
+      XIL_DEVICE_G    : string := "7SERIES");
    port (
       -- RD53 ASIC Serial Interface
-      dPortDataP    : in  sl;
-      dPortDataN    : in  sl;
-      polarity      : in  sl;
-      iDelayCtrlRdy : in  sl;
-      selectRate    : in  slv(1 downto 0);
+      dPortDataP       : in  sl;
+      dPortDataN       : in  sl;
+      polarity         : in  sl;
+      iDelayCtrlRdy    : in  sl;
+      selectRate       : in  slv(1 downto 0);
+      rxBitCtrlToSlice : in  slv(39 downto 0);
+      txBitCtrlToSlice : in  slv(39 downto 0);
+      rxBitSliceToCtrl : out slv(39 downto 0);
+      txBitSliceToCtrl : out slv(39 downto 0);
       -- Timing Interface
-      clk640MHz     : in  sl;
-      clk160MHz     : in  sl;
-      rst160MHz     : in  sl;
+      clk640MHz        : in  sl;
+      clk160MHz        : in  sl;
+      rst160MHz        : in  sl;
       -- Output
-      rxLinkUp      : out sl;
-      rxValid       : out sl;
-      rxHeader      : out slv(1 downto 0);
-      rxData        : out slv(63 downto 0));
+      rxLinkUp         : out sl;
+      rxValid          : out sl;
+      rxHeader         : out slv(1 downto 0);
+      rxData           : out slv(63 downto 0));
 end AuroraRxLane;
 
 architecture mapping of AuroraRxLane is
 
    constant SCRAMBLER_TAPS_C : IntegerArray := (0 => 39, 1 => 58);
 
-   signal serDeslock     : sl;
    signal serDesData     : slv(7 downto 0);
    signal serDesDataMask : slv(7 downto 0);
 
@@ -71,7 +75,8 @@ architecture mapping of AuroraRxLane is
 
    signal header : slv(1 downto 0);
    signal data   : slv(63 downto 0);
-
+   
+   signal dlyConfig : slv(4 downto 0);
 
 begin
 
@@ -83,26 +88,31 @@ begin
          rstIn  => rst160MHz,
          rstOut => reset160MHz);
 
-   ------------------
-   -- XAPP1017 Module
-   ------------------
-   U_SerDes : entity work.serdes_1_to_468_idelay_ddr
+   ----------------------
+   -- Deserializer Module
+   ----------------------
+   U_Deser : entity work.AuroraRxLaneDeser
       generic map (
-         XIL_DEVICE_G          => XIL_DEVICE_G,
-         S                     => 8,
-         D                     => 1,
-         REF_FREQ              => 300.0,
-         HIGH_PERFORMANCE_MODE => "TRUE",
-         DATA_FORMAT           => "PER_CLOCK")
+         TPD_G           => TPD_G,
+         IODELAY_GROUP_G => IODELAY_GROUP_G,
+         XIL_DEVICE_G    => XIL_DEVICE_G)
       port map (
-         datain_p(0)    => dPortDataP,
-         datain_n(0)    => dPortDataN,
-         reset          => reset160MHz,
-         idelay_rdy     => iDelayCtrlRdy,
-         rxclk          => clk640MHz,
-         system_clk     => clk160MHz,
-         rx_lckd        => serDeslock,
-         rx_data        => serDesData);
+         -- RD53 ASIC Serial Interface
+         dPortDataP       => dPortDataP,
+         dPortDataN       => dPortDataN,
+         iDelayCtrlRdy    => iDelayCtrlRdy,
+         -- Timing Interface
+         clk640MHz        => clk640MHz,
+         clk160MHz        => clk160MHz,
+         rst160MHz        => rst160MHz,
+         -- Delay Configuration
+         dlyCfgIn         => dlyConfig,
+         rxBitCtrlToSlice => rxBitCtrlToSlice,
+         txBitCtrlToSlice => txBitCtrlToSlice,
+         rxBitSliceToCtrl => rxBitSliceToCtrl,
+         txBitSliceToCtrl => txBitSliceToCtrl,
+         -- Output
+         dataOut          => serDesData);
 
    ----------------------------
    -- Support inverted polarity
@@ -122,7 +132,7 @@ begin
          rst                      => reset160MHz,
          slip                     => bitslip,
          slaveData(7 downto 0)    => serDesDataMask,
-         slaveValid               => serDeslock,
+         slaveValid               => '1',
          masterData(63 downto 0)  => phyRxDataVec(0),
          masterData(65 downto 64) => phyRxHeaderVec(0),
          masterValid              => phyRxValidVec(0),
@@ -141,7 +151,7 @@ begin
          slaveData(1)             => serDesDataMask(2),
          slaveData(2)             => serDesDataMask(4),
          slaveData(3)             => serDesDataMask(6),
-         slaveValid               => serDeslock,
+         slaveValid               => '1',
          masterData(63 downto 0)  => phyRxDataVec(1),
          masterData(65 downto 64) => phyRxHeaderVec(1),
          masterValid              => phyRxValidVec(1),
@@ -158,7 +168,7 @@ begin
          slip                     => bitslip,
          slaveData(0)             => serDesDataMask(0),
          slaveData(1)             => serDesDataMask(4),
-         slaveValid               => serDeslock,
+         slaveValid               => '1',
          masterData(63 downto 0)  => phyRxDataVec(2),
          masterData(65 downto 64) => phyRxHeaderVec(2),
          masterValid              => phyRxValidVec(2),
@@ -174,7 +184,7 @@ begin
          rst                      => reset160MHz,
          slip                     => bitslip,
          slaveData(0)             => serDesDataMask(0),
-         slaveValid               => serDeslock,
+         slaveValid               => '1',
          masterData(63 downto 0)  => phyRxDataVec(3),
          masterData(65 downto 64) => phyRxHeaderVec(3),
          masterValid              => phyRxValidVec(3),
@@ -207,18 +217,18 @@ begin
    ------------------
    -- Gearbox aligner
    ------------------
-   U_GearboxAligner : entity work.Pgp3RxGearboxAligner
+   U_GearboxAligner : entity work.AuroraRxGearboxAligner
       generic map (
-         TPD_G       => TPD_G,
-         SLIP_WAIT_G => 128)
+         TPD_G       => TPD_G)
       port map (
          clk           => clk160MHz,
          rst           => reset160MHz,
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
          slip          => bitslip,
+         dlyConfig     => dlyConfig,
          locked        => gearboxAligned);
-
+         
    ---------------------------------
    -- Unscramble the data for 64b66b
    ---------------------------------

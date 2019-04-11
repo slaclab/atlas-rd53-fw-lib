@@ -25,46 +25,51 @@ use work.Pgp3Pkg.all;
 
 entity AtlasRd53Core is
    generic (
-      TPD_G         : time                  := 1 ns;
-      AXIS_CONFIG_G : AxiStreamConfigType;
-      VALID_THOLD_G : positive              := 128;  -- Hold until enough to burst into the interleaving MUX
-      SIMULATION_G  : boolean               := false;
-      RX_MAPPING_G  : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping 
-      XIL_DEVICE_G  : string                := "7SERIES";
-      SYNTH_MODE_G  : string                := "inferred";
-      MEMORY_TYPE_G : string                := "block");
+      TPD_G           : time                  := 1 ns;
+      AXIS_CONFIG_G   : AxiStreamConfigType;
+      VALID_THOLD_G   : positive              := 128;  -- Hold until enough to burst into the interleaving MUX
+      SIMULATION_G    : boolean               := false;
+      RX_MAPPING_G    : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping 
+      IODELAY_GROUP_G : string                := "rd53_aurora";
+      XIL_DEVICE_G    : string                := "7SERIES";
+      SYNTH_MODE_G    : string                := "inferred";
+      MEMORY_TYPE_G   : string                := "block");
    port (
       -- I/O Delay Interfaces (clk160MHz domain)
-      iDelayCtrlRdy   : in  sl;
-      pllRst          : out sl;
+      iDelayCtrlRdy    : in  sl;
+      pllRst           : out sl;
+      rxBitCtrlToSlice : in  Slv40Array(3 downto 0);
+      txBitCtrlToSlice : in  Slv40Array(3 downto 0);
+      rxBitSliceToCtrl : out Slv40Array(3 downto 0);
+      txBitSliceToCtrl : out Slv40Array(3 downto 0);
       -- AXI-Lite Interface (axilClk domain)
-      axilClk         : in  sl;
-      axilRst         : in  sl;
-      axilReadMaster  : in  AxiLiteReadMasterType;
-      axilReadSlave   : out AxiLiteReadSlaveType;
-      axilWriteMaster : in  AxiLiteWriteMasterType;
-      axilWriteSlave  : out AxiLiteWriteSlaveType;
+      axilClk          : in  sl;
+      axilRst          : in  sl;
+      axilReadMaster   : in  AxiLiteReadMasterType;
+      axilReadSlave    : out AxiLiteReadSlaveType;
+      axilWriteMaster  : in  AxiLiteWriteMasterType;
+      axilWriteSlave   : out AxiLiteWriteSlaveType;
       -- Streaming Config/Trig Interface (clk160MHz domain)
-      emuTimingMaster : in  AxiStreamMasterType;
-      emuTimingSlave  : out AxiStreamSlaveType;
+      emuTimingMaster  : in  AxiStreamMasterType;
+      emuTimingSlave   : out AxiStreamSlaveType;
       -- Streaming Data Interface (axisClk domain)
-      axisClk         : in  sl;
-      axisRst         : in  sl;
-      mDataMaster     : out AxiStreamMasterType;
-      mDataSlave      : in  AxiStreamSlaveType;
-      sConfigMaster   : in  AxiStreamMasterType;
-      sConfigSlave    : out AxiStreamSlaveType;
-      mConfigMaster   : out AxiStreamMasterType;
-      mConfigSlave    : in  AxiStreamSlaveType;
+      axisClk          : in  sl;
+      axisRst          : in  sl;
+      mDataMaster      : out AxiStreamMasterType;
+      mDataSlave       : in  AxiStreamSlaveType;
+      sConfigMaster    : in  AxiStreamMasterType;
+      sConfigSlave     : out AxiStreamSlaveType;
+      mConfigMaster    : out AxiStreamMasterType;
+      mConfigSlave     : in  AxiStreamSlaveType;
       -- Timing/Trigger Interface
-      clk640MHz       : in  sl;
-      clk160MHz       : in  sl;
-      rst160MHz       : in  sl;
+      clk640MHz        : in  sl;
+      clk160MHz        : in  sl;
+      rst160MHz        : in  sl;
       -- RD53 ASIC Serial Ports
-      dPortDataP      : in  slv(3 downto 0);
-      dPortDataN      : in  slv(3 downto 0);
-      dPortCmdP       : out sl;
-      dPortCmdN       : out sl);
+      dPortDataP       : in  slv(3 downto 0);
+      dPortDataN       : in  slv(3 downto 0);
+      dPortCmdP        : out sl;
+      dPortCmdN        : out sl);
 end AtlasRd53Core;
 
 architecture mapping of AtlasRd53Core is
@@ -163,31 +168,36 @@ begin
    ---------------
    U_RxPhyLayer : entity work.AuroraRxChannel
       generic map (
-         TPD_G        => TPD_G,
-         SIMULATION_G => SIMULATION_G,
-         XIL_DEVICE_G => XIL_DEVICE_G,
-         SYNTH_MODE_G => SYNTH_MODE_G)
+         TPD_G           => TPD_G,
+         SIMULATION_G    => SIMULATION_G,
+         IODELAY_GROUP_G => IODELAY_GROUP_G,
+         XIL_DEVICE_G    => XIL_DEVICE_G,
+         SYNTH_MODE_G    => SYNTH_MODE_G)
       port map (
          -- RD53 ASIC Serial Ports
-         dPortDataP    => dPortDataP,
-         dPortDataN    => dPortDataN,
+         dPortDataP       => dPortDataP,
+         dPortDataN       => dPortDataN,
          -- Timing Interface
-         clk640MHz     => clk640MHz,
-         clk160MHz     => clk160MHz,
-         rst160MHz     => rst160MHz,
+         clk640MHz        => clk640MHz,
+         clk160MHz        => clk160MHz,
+         rst160MHz        => rst160MHz,
          -- Status/Control Interface
-         iDelayCtrlRdy => iDelayCtrlRdy,
-         enable        => enable,
-         selectRate    => selectRate,
-         invData       => invData,
-         linkUp        => linkUp,
-         chBond        => chBond,
-         rxPhyXbar     => rxPhyXbar,
-         debugStream   => debugStream,
+         iDelayCtrlRdy    => iDelayCtrlRdy,
+         enable           => enable,
+         selectRate       => selectRate,
+         invData          => invData,
+         linkUp           => linkUp,
+         chBond           => chBond,
+         rxPhyXbar        => rxPhyXbar,
+         rxBitCtrlToSlice => rxBitCtrlToSlice,
+         txBitCtrlToSlice => txBitCtrlToSlice,
+         rxBitSliceToCtrl => rxBitSliceToCtrl,
+         txBitSliceToCtrl => txBitSliceToCtrl,
+         debugStream      => debugStream,
          -- AutoReg and Read back Interface
-         dataMaster    => dataMaster,
-         configMaster  => configMaster,
-         autoReadReg   => autoReadReg);
+         dataMaster       => dataMaster,
+         configMaster     => configMaster,
+         autoReadReg      => autoReadReg);
 
    -----------------------         
    -- Outbound Config FIFO
@@ -280,7 +290,7 @@ begin
          SYNTH_MODE_G        => SYNTH_MODE_G,
          MEMORY_TYPE_G       => MEMORY_TYPE_G,
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => log2(4*VALID_THOLD_G),
+         FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G="ultra",23,log2(4*VALID_THOLD_G)),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
