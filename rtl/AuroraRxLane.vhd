@@ -25,36 +25,27 @@ use unisim.vcomponents.all;
 
 entity AuroraRxLane is
    generic (
-      TPD_G           : time   := 1 ns;
-      IODELAY_GROUP_G : string := "rd53_aurora";
-      XIL_DEVICE_G    : string := "7SERIES");
+      TPD_G : time := 1 ns);
    port (
       -- RD53 ASIC Serial Interface
-      dPortDataP       : in  sl;
-      dPortDataN       : in  sl;
-      polarity         : in  sl;
-      iDelayCtrlRdy    : in  sl;
-      selectRate       : in  slv(1 downto 0);
-      rxBitCtrlToSlice : in  slv(39 downto 0);
-      txBitCtrlToSlice : in  slv(39 downto 0);
-      rxBitSliceToCtrl : out slv(39 downto 0);
-      txBitSliceToCtrl : out slv(39 downto 0);
+      serDesData : in  slv(7 downto 0);
+      dlyCfg     : out slv(4 downto 0);
+      polarity   : in  sl;
+      selectRate : in  slv(1 downto 0);
       -- Timing Interface
-      clk640MHz        : in  sl;
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk160MHz  : in  sl;
+      rst160MHz  : in  sl;
       -- Output
-      rxLinkUp         : out sl;
-      rxValid          : out sl;
-      rxHeader         : out slv(1 downto 0);
-      rxData           : out slv(63 downto 0));
+      rxLinkUp   : out sl;
+      rxValid    : out sl;
+      rxHeader   : out slv(1 downto 0);
+      rxData     : out slv(63 downto 0));
 end AuroraRxLane;
 
 architecture mapping of AuroraRxLane is
 
    constant SCRAMBLER_TAPS_C : IntegerArray := (0 => 39, 1 => 58);
 
-   signal serDesData     : slv(7 downto 0);
    signal serDesDataMask : slv(7 downto 0);
 
    signal phyRxValidVec  : slv(3 downto 0);
@@ -75,7 +66,7 @@ architecture mapping of AuroraRxLane is
 
    signal header : slv(1 downto 0);
    signal data   : slv(63 downto 0);
-   
+
    signal dlyConfig : slv(4 downto 0);
 
 begin
@@ -87,32 +78,6 @@ begin
          clk    => clk160MHz,
          rstIn  => rst160MHz,
          rstOut => reset160MHz);
-
-   ----------------------
-   -- Deserializer Module
-   ----------------------
-   U_Deser : entity work.AuroraRxLaneDeser
-      generic map (
-         TPD_G           => TPD_G,
-         IODELAY_GROUP_G => IODELAY_GROUP_G,
-         XIL_DEVICE_G    => XIL_DEVICE_G)
-      port map (
-         -- RD53 ASIC Serial Interface
-         dPortDataP       => dPortDataP,
-         dPortDataN       => dPortDataN,
-         iDelayCtrlRdy    => iDelayCtrlRdy,
-         -- Timing Interface
-         clk640MHz        => clk640MHz,
-         clk160MHz        => clk160MHz,
-         rst160MHz        => rst160MHz,
-         -- Delay Configuration
-         dlyCfgIn         => dlyConfig,
-         rxBitCtrlToSlice => rxBitCtrlToSlice,
-         txBitCtrlToSlice => txBitCtrlToSlice,
-         rxBitSliceToCtrl => rxBitSliceToCtrl,
-         txBitSliceToCtrl => txBitSliceToCtrl,
-         -- Output
-         dataOut          => serDesData);
 
    ----------------------------
    -- Support inverted polarity
@@ -219,16 +184,16 @@ begin
    ------------------
    U_GearboxAligner : entity work.AuroraRxGearboxAligner
       generic map (
-         TPD_G       => TPD_G)
+         TPD_G => TPD_G)
       port map (
          clk           => clk160MHz,
          rst           => reset160MHz,
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
          slip          => bitslip,
-         dlyConfig     => dlyConfig,
+         dlyConfig     => dlyCfg,
          locked        => gearboxAligned);
-         
+
    ---------------------------------
    -- Unscramble the data for 64b66b
    ---------------------------------

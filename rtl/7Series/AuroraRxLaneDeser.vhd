@@ -28,7 +28,7 @@ entity AuroraRxLaneDeser is
       TPD_G           : time   := 1 ns;
       IODELAY_GROUP_G : string := "rd53_aurora";
       REF_FREQ_G      : real   := 300.0;  -- IDELAYCTRL's REFCLK (in units of Hz)
-      XIL_DEVICE_G    : string := "ULTRASCALE");
+      XIL_DEVICE_G    : string := "7SERIES");
    port (
       -- RD53 ASIC Serial Interface
       dPortDataP       : in  sl;
@@ -40,10 +40,6 @@ entity AuroraRxLaneDeser is
       rst160MHz        : in  sl;
       -- Delay Configuration
       dlyCfgIn         : in  slv(4 downto 0);
-      rxBitCtrlToSlice : in  slv(39 downto 0);
-      txBitCtrlToSlice : in  slv(39 downto 0);
-      rxBitSliceToCtrl : out slv(39 downto 0) := (others => '0');
-      txBitSliceToCtrl : out slv(39 downto 0) := (others => '0');
       -- Output
       dataOut          : out slv(7 downto 0));
 end AuroraRxLaneDeser;

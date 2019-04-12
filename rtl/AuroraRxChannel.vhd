@@ -23,36 +23,28 @@ use work.AxiStreamPkg.all;
 
 entity AuroraRxChannel is
    generic (
-      TPD_G           : time    := 1 ns;
-      SIMULATION_G    : boolean := false;
-      IODELAY_GROUP_G : string  := "rd53_aurora";
-      XIL_DEVICE_G    : string  := "7SERIES";
-      SYNTH_MODE_G    : string  := "inferred");
+      TPD_G        : time    := 1 ns;
+      SIMULATION_G : boolean := false;
+      SYNTH_MODE_G : string  := "inferred");
    port (
-      -- RD53 ASIC Serial Ports
-      dPortDataP       : in  slv(3 downto 0);
-      dPortDataN       : in  slv(3 downto 0);
+      -- Deserialization Interface
+      serDesData   : in  Slv8Array(3 downto 0);
+      dlyCfg       : out Slv5Array(3 downto 0);
       -- Timing Interface
-      clk640MHz        : in  sl;
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk160MHz    : in  sl;
+      rst160MHz    : in  sl;
       -- Status/Control Interface
-      iDelayCtrlRdy    : in  sl;
-      enable           : in  slv(3 downto 0);
-      invData          : in  slv(3 downto 0);
-      selectRate       : in  slv(1 downto 0);
-      linkUp           : out slv(3 downto 0);
-      chBond           : out sl;
-      rxPhyXbar        : in  Slv2Array(3 downto 0);
-      rxBitCtrlToSlice : in  Slv40Array(3 downto 0);
-      txBitCtrlToSlice : in  Slv40Array(3 downto 0);
-      rxBitSliceToCtrl : out Slv40Array(3 downto 0);
-      txBitSliceToCtrl : out Slv40Array(3 downto 0);
-      debugStream      : in  sl;
+      enable       : in  slv(3 downto 0);
+      invData      : in  slv(3 downto 0);
+      selectRate   : in  slv(1 downto 0);
+      linkUp       : out slv(3 downto 0);
+      chBond       : out sl;
+      rxPhyXbar    : in  Slv2Array(3 downto 0);
+      debugStream  : in  sl;
       -- AutoReg and Read back Interface
-      dataMaster       : out AxiStreamMasterType;
-      configMaster     : out AxiStreamMasterType;
-      autoReadReg      : out Slv32Array(3 downto 0));
+      dataMaster   : out AxiStreamMasterType;
+      configMaster : out AxiStreamMasterType;
+      autoReadReg  : out Slv32Array(3 downto 0));
 end AuroraRxChannel;
 
 architecture rtl of AuroraRxChannel is
@@ -120,29 +112,21 @@ begin
 
       U_Rx : entity work.AuroraRxLane
          generic map (
-            TPD_G           => TPD_G,
-            IODELAY_GROUP_G => IODELAY_GROUP_G,
-            XIL_DEVICE_G    => XIL_DEVICE_G)
+            TPD_G => TPD_G)
          port map (
             -- RD53 ASIC Serial Interface
-            dPortDataP       => dPortDataP(i),
-            dPortDataN       => dPortDataN(i),
-            polarity         => invData(i),
-            selectRate       => selectRate,
-            rxBitCtrlToSlice => rxBitCtrlToSlice(i),
-            txBitCtrlToSlice => txBitCtrlToSlice(i),
-            rxBitSliceToCtrl => rxBitSliceToCtrl(i),
-            txBitSliceToCtrl => txBitSliceToCtrl(i),
-            iDelayCtrlRdy    => iDelayCtrlRdy,
+            serDesData => serDesData(i),
+            dlyCfg     => dlyCfg(i),
+            polarity   => invData(i),
+            selectRate => selectRate,
             -- Timing Interface
-            clk640MHz        => clk640MHz,
-            clk160MHz        => clk160MHz,
-            rst160MHz        => rst160MHz,
+            clk160MHz  => clk160MHz,
+            rst160MHz  => rst160MHz,
             -- Output
-            rxLinkUp         => rxLinkUpOut(i),
-            rxValid          => rxValidOut(i),
-            rxHeader         => rxHeaderOut(i),
-            rxData           => rxDataOut(i));
+            rxLinkUp   => rxLinkUpOut(i),
+            rxValid    => rxValidOut(i),
+            rxHeader   => rxHeaderOut(i),
+            rxData     => rxDataOut(i));
 
       -- Crossbar Switch
       process(clk160MHz)

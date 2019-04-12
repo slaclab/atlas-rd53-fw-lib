@@ -31,21 +31,17 @@ entity AuroraRxLaneDeser is
       XIL_DEVICE_G    : string := "ULTRASCALE");
    port (
       -- RD53 ASIC Serial Interface
-      dPortDataP       : in  sl;
-      dPortDataN       : in  sl;
-      iDelayCtrlRdy    : in  sl;
+      dPortDataP    : in  sl;
+      dPortDataN    : in  sl;
+      iDelayCtrlRdy : in  sl;
       -- Timing Interface
-      clk640MHz        : in  sl;
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk640MHz     : in  sl;
+      clk160MHz     : in  sl;
+      rst160MHz     : in  sl;
       -- Delay Configuration
-      dlyCfgIn         : in  slv(4 downto 0);
-      rxBitCtrlToSlice : in  slv(39 downto 0);
-      txBitCtrlToSlice : in  slv(39 downto 0);
-      rxBitSliceToCtrl : out slv(39 downto 0) := (others => '0');
-      txBitSliceToCtrl : out slv(39 downto 0) := (others => '0');
+      dlyCfgIn      : in  slv(4 downto 0);
       -- Output
-      dataOut          : out slv(7 downto 0));
+      dataOut       : out slv(7 downto 0));
 end AuroraRxLaneDeser;
 
 architecture mapping of AuroraRxLaneDeser is
@@ -53,6 +49,8 @@ architecture mapping of AuroraRxLaneDeser is
    signal dPortData : sl;
    signal dlyCfg    : slv(8 downto 0) := (others => '0');
    signal dataDly   : sl;
+   signal empty     : sl;
+   signal rdEn      : sl;
 
    attribute IODELAY_GROUP            : string;
    attribute IODELAY_GROUP of U_DELAY : label is IODELAY_GROUP_G;
@@ -107,6 +105,9 @@ begin
          CLKDIV      => clk160MHz,
          RST         => rst160MHz,
          FIFO_RD_CLK => clk160MHz,
-         FIFO_RD_EN  => '1');
+         FIFO_RD_EN  => rdEn,
+         FIFO_EMPTY  => empty);
+
+   rdEn <= not(empty);
 
 end mapping;
