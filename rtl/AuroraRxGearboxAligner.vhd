@@ -26,7 +26,8 @@ use work.StdRtlPkg.all;
 
 entity AuroraRxGearboxAligner is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G        : time    := 1 ns;
+      SIMULATION_G : boolean := false);
    port (
       clk           : in  sl;
       rst           : in  sl;
@@ -41,7 +42,7 @@ architecture rtl of AuroraRxGearboxAligner is
 
    constant SLIP_CNT_C   : positive := 66;
    constant SLIP_WAIT_C  : positive := 100;
-   constant LOCKED_CNT_C : positive := 1000;
+   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
 
    type StateType is (
       UNLOCKED_S,
@@ -147,6 +148,7 @@ begin
             end if;
       ----------------------------------------------------------------------
       end case;
+
 
       -- Outputs 
       locked    <= r.locked;

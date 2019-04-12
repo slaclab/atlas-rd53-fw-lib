@@ -25,7 +25,8 @@ use unisim.vcomponents.all;
 
 entity AuroraRxLane is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G        : time    := 1 ns;
+      SIMULATION_G : boolean := false);
    port (
       -- RD53 ASIC Serial Interface
       serDesData : in  slv(7 downto 0);
@@ -66,8 +67,6 @@ architecture mapping of AuroraRxLane is
 
    signal header : slv(1 downto 0);
    signal data   : slv(63 downto 0);
-
-   signal dlyConfig : slv(4 downto 0);
 
 begin
 
@@ -184,7 +183,8 @@ begin
    ------------------
    U_GearboxAligner : entity work.AuroraRxGearboxAligner
       generic map (
-         TPD_G => TPD_G)
+         TPD_G        => TPD_G,
+         SIMULATION_G => SIMULATION_G)
       port map (
          clk           => clk160MHz,
          rst           => reset160MHz,

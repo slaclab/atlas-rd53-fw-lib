@@ -112,7 +112,8 @@ begin
 
       U_Rx : entity work.AuroraRxLane
          generic map (
-            TPD_G => TPD_G)
+            TPD_G        => TPD_G,
+            SIMULATION_G => SIMULATION_G)
          port map (
             -- RD53 ASIC Serial Interface
             serDesData => serDesData(i),
