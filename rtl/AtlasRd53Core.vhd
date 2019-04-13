@@ -276,7 +276,8 @@ begin
          SYNTH_MODE_G        => SYNTH_MODE_G,
          MEMORY_TYPE_G       => MEMORY_TYPE_G,
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G = "ultra", 23, log2(4*VALID_THOLD_G)),
+         --FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G = "ultra", 20, log2(4*VALID_THOLD_G)),
+         FIFO_ADDR_WIDTH_G   => log2(4*VALID_THOLD_G),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
