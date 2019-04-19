@@ -25,7 +25,8 @@ use work.Pgp3Pkg.all;
 
 entity AtlasRd53RxDataBatcher is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G         : time := 1 ns;
+      AXIS_CONFIG_G : AxiStreamConfigType);
    port (
       -- Clock and Reset
       axisClk     : in  sl;
@@ -112,7 +113,7 @@ begin
                v.mDataMasters(1).tLast  := '0';
                v.mDataMasters(1).tUser  := (others => '0');
                -- Set Start of Frame (SOF) flag
-               ssiSetUserSof(PGP3_AXIS_CONFIG_C, v.mDataMasters(1), '1');
+               ssiSetUserSof(AXIS_CONFIG_G, v.mDataMasters(1), '1');
                -- Check for min. batch size
                if (batchSize = 0) then
                   -- Set the End of Frame (EOF) flag

@@ -25,7 +25,8 @@ use work.SsiPkg.all;
 
 entity AtlasRd53RdReg is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G         : time := 1 ns;
+      AXIS_CONFIG_G : AxiStreamConfigType);
    port (
       debugStream  : in  sl;
       clk160MHz    : in  sl;
@@ -75,7 +76,7 @@ begin
          -- Set the End of Frame (EOF) flag
          v.configMaster.tLast              := '1';
          -- Set Start of Frame (SOF) flag
-         ssiSetUserSof(PGP3_AXIS_CONFIG_C, v.configMaster, '1');
+         ssiSetUserSof(AXIS_CONFIG_G, v.configMaster, '1');
       end procedure fwdRdReg;
 
    begin

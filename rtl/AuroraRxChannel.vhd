@@ -23,9 +23,10 @@ use work.AxiStreamPkg.all;
 
 entity AuroraRxChannel is
    generic (
-      TPD_G        : time    := 1 ns;
-      SIMULATION_G : boolean := false;
-      SYNTH_MODE_G : string  := "inferred");
+      TPD_G         : time    := 1 ns;
+      AXIS_CONFIG_G : AxiStreamConfigType;
+      SIMULATION_G  : boolean := false;
+      SYNTH_MODE_G  : string  := "inferred");
    port (
       -- Deserialization Interface
       serDesData   : in  Slv8Array(3 downto 0);
@@ -170,7 +171,8 @@ begin
 
    U_RdReg : entity work.AtlasRd53RdReg
       generic map (
-         TPD_G => TPD_G)
+         TPD_G         => TPD_G,
+         AXIS_CONFIG_G => AXIS_CONFIG_G)
       port map (
          clk160MHz    => clk160MHz,
          rst160MHz    => rst160MHz,

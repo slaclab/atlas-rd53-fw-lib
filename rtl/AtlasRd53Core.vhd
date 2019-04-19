@@ -21,7 +21,7 @@ use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
-use work.Pgp3Pkg.all;
+use work.SsiPkg.all;
 
 entity AtlasRd53Core is
    generic (
@@ -35,38 +35,46 @@ entity AtlasRd53Core is
       MEMORY_TYPE_G : string                := "block");
    port (
       -- I/O Delay Interfaces
-      pllRst           : out sl;
+      pllRst          : out sl;
       -- AXI-Lite Interface (axilClk domain)
-      axilClk          : in  sl;
-      axilRst          : in  sl;
-      axilReadMaster   : in  AxiLiteReadMasterType;
-      axilReadSlave    : out AxiLiteReadSlaveType;
-      axilWriteMaster  : in  AxiLiteWriteMasterType;
-      axilWriteSlave   : out AxiLiteWriteSlaveType;
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType;
       -- Streaming Config/Trig Interface (clk160MHz domain)
-      emuTimingMaster  : in  AxiStreamMasterType;
-      emuTimingSlave   : out AxiStreamSlaveType;
+      emuTimingMaster : in  AxiStreamMasterType;
+      emuTimingSlave  : out AxiStreamSlaveType;
       -- Streaming Data Interface (axisClk domain)
-      axisClk          : in  sl;
-      axisRst          : in  sl;
-      mDataMaster      : out AxiStreamMasterType;
-      mDataSlave       : in  AxiStreamSlaveType;
-      sConfigMaster    : in  AxiStreamMasterType;
-      sConfigSlave     : out AxiStreamSlaveType;
-      mConfigMaster    : out AxiStreamMasterType;
-      mConfigSlave     : in  AxiStreamSlaveType;
+      axisClk         : in  sl;
+      axisRst         : in  sl;
+      mDataMaster     : out AxiStreamMasterType;
+      mDataSlave      : in  AxiStreamSlaveType;
+      sConfigMaster   : in  AxiStreamMasterType;
+      sConfigSlave    : out AxiStreamSlaveType;
+      mConfigMaster   : out AxiStreamMasterType;
+      mConfigSlave    : in  AxiStreamSlaveType;
       -- Timing/Trigger Interface
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk160MHz       : in  sl;
+      rst160MHz       : in  sl;
       -- Deserialization Interface
-      serDesData       : in  Slv8Array(3 downto 0);
-      dlyCfg           : out Slv5Array(3 downto 0);
+      serDesData      : in  Slv8Array(3 downto 0);
+      dlyCfg          : out Slv5Array(3 downto 0);
       -- RD53 ASIC Serial Ports
-      dPortCmdP        : out sl;
-      dPortCmdN        : out sl);
+      dPortCmdP       : out sl;
+      dPortCmdN       : out sl);
 end AtlasRd53Core;
 
 architecture mapping of AtlasRd53Core is
+
+   constant INT_AXIS_CONFIG_C : AxiStreamConfigType :=
+      ssiAxiStreamConfig(
+         dataBytes => 8,                -- 64-bit width
+         tKeepMode => TKEEP_COMP_C,
+         tUserMode => TUSER_FIRST_LAST_C,
+         tDestBits => 0,
+         tUserBits => 2);
 
    signal dataMaster : AxiStreamMasterType;
    signal dataCtrl   : AxiStreamCtrlType;
@@ -137,8 +145,7 @@ begin
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => AXIS_CONFIG_G,
          XIL_DEVICE_G  => XIL_DEVICE_G,
-         SYNTH_MODE_G  => SYNTH_MODE_G,
-         MEMORY_TYPE_G => MEMORY_TYPE_G)
+         SYNTH_MODE_G  => SYNTH_MODE_G)
       port map (
          -- Streaming EMU Trig Interface (clk160MHz domain)
          emuTimingMaster => emuTimingMaster,
@@ -162,28 +169,29 @@ begin
    ---------------
    U_RxPhyLayer : entity work.AuroraRxChannel
       generic map (
-         TPD_G        => TPD_G,
-         SIMULATION_G => SIMULATION_G,
-         SYNTH_MODE_G => SYNTH_MODE_G)
+         TPD_G         => TPD_G,
+         AXIS_CONFIG_G => INT_AXIS_CONFIG_C,
+         SIMULATION_G  => SIMULATION_G,
+         SYNTH_MODE_G  => SYNTH_MODE_G)
       port map (
          -- Deserialization Interface
-         serDesData       => serDesData,
-         dlyCfg           => dlyCfg,
+         serDesData   => serDesData,
+         dlyCfg       => dlyCfg,
          -- Timing Interface
-         clk160MHz        => clk160MHz,
-         rst160MHz        => rst160MHz,
+         clk160MHz    => clk160MHz,
+         rst160MHz    => rst160MHz,
          -- Status/Control Interface
-         enable           => enable,
-         selectRate       => selectRate,
-         invData          => invData,
-         linkUp           => linkUp,
-         chBond           => chBond,
-         rxPhyXbar        => rxPhyXbar,
-         debugStream      => debugStream,
+         enable       => enable,
+         selectRate   => selectRate,
+         invData      => invData,
+         linkUp       => linkUp,
+         chBond       => chBond,
+         rxPhyXbar    => rxPhyXbar,
+         debugStream  => debugStream,
          -- AutoReg and Read back Interface
-         dataMaster       => dataMaster,
-         configMaster     => configMaster,
-         autoReadReg      => autoReadReg);
+         dataMaster   => dataMaster,
+         configMaster => configMaster,
+         autoReadReg  => autoReadReg);
 
    -----------------------         
    -- Outbound Config FIFO
@@ -200,7 +208,7 @@ begin
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,  -- 64-bit interface
+         SLAVE_AXI_CONFIG_G  => INT_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
       port map (
          -- Slave Port
@@ -229,8 +237,8 @@ begin
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
-         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C)
+         SLAVE_AXI_CONFIG_G  => INT_AXIS_CONFIG_C,
+         MASTER_AXI_CONFIG_G => INT_AXIS_CONFIG_C)
       port map (
          -- Slave Port
          sAxisClk    => clk160MHz,
@@ -248,7 +256,8 @@ begin
    ---------------------------------------------------------
    U_DataBatcher : entity work.AtlasRd53RxDataBatcher
       generic map (
-         TPD_G => TPD_G)
+         TPD_G         => TPD_G,
+         AXIS_CONFIG_G => INT_AXIS_CONFIG_C)
       port map (
          -- Clock and Reset
          axisClk     => axisClk,
@@ -273,13 +282,12 @@ begin
          VALID_THOLD_G       => VALID_THOLD_G,
          VALID_BURST_MODE_G  => true,
          -- FIFO configurations
-         SYNTH_MODE_G        => SYNTH_MODE_G,
+         SYNTH_MODE_G        => "xpm",
          MEMORY_TYPE_G       => MEMORY_TYPE_G,
          GEN_SYNC_FIFO_G     => true,
-         --FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G = "ultra", 20, log2(4*VALID_THOLD_G)),
-         FIFO_ADDR_WIDTH_G   => log2(4*VALID_THOLD_G),
+         FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G = "ultra", 14, log2(2*VALID_THOLD_G)),
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
+         SLAVE_AXI_CONFIG_G  => INT_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
       port map (
          -- Slave Port

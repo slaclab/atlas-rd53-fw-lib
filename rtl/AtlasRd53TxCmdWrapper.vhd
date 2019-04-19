@@ -143,13 +143,14 @@ begin
          INT_PIPE_STAGES_G   => 0,
          PIPE_STAGES_G       => 0,
          SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 4090,   -- less than 2**FIFO_ADDR_WIDTH_G
+         VALID_THOLD_G       => 500,   -- less than 2**FIFO_ADDR_WIDTH_G
          VALID_BURST_MODE_G  => true,   -- bursting mode enabled
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
-         MEMORY_TYPE_G       => MEMORY_TYPE_G,
+         -- MEMORY_TYPE_G       => MEMORY_TYPE_G,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => 12,
+         FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
          MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
