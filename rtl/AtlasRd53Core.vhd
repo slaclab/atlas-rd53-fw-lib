@@ -31,8 +31,7 @@ entity AtlasRd53Core is
       SIMULATION_G  : boolean               := false;
       RX_MAPPING_G  : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping 
       XIL_DEVICE_G  : string                := "7SERIES";
-      SYNTH_MODE_G  : string                := "inferred";
-      MEMORY_TYPE_G : string                := "block");
+      SYNTH_MODE_G  : string                := "xpm");
    port (
       -- I/O Delay Interfaces
       pllRst          : out sl;
@@ -283,9 +282,9 @@ begin
          VALID_BURST_MODE_G  => true,
          -- FIFO configurations
          SYNTH_MODE_G        => "xpm",
-         MEMORY_TYPE_G       => MEMORY_TYPE_G,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => ite(MEMORY_TYPE_G = "ultra", 14, log2(2*VALID_THOLD_G)),
+         FIFO_ADDR_WIDTH_G   => log2(2*VALID_THOLD_G),
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => INT_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => AXIS_CONFIG_G)
