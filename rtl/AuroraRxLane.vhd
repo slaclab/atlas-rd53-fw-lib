@@ -61,6 +61,7 @@ architecture mapping of AuroraRxLane is
    signal unscramblerValid : sl;
    signal gearboxAligned   : sl;
 
+   signal rxValidOut      : sl;
    signal reset160MHz     : sl;
    signal reset           : sl;
    signal misalignedEvent : sl;
@@ -211,12 +212,12 @@ begin
          inputValid     => unscramblerValid,
          inputData      => phyRxData,
          inputSideband  => phyRxHeader,
-         outputValid    => rxValid,
+         outputValid    => rxValidOut,
          outputData     => data,
          outputSideband => header);
 
-   rxHeader <= bitReverse(header);
-   rxData   <= bitReverse(data);
+   rxValid <= rxValidOut;
+   rxData  <= bitReverse(data);
 
    U_Reset : entity work.SynchronizerOneShot
       generic map (
@@ -236,6 +237,10 @@ begin
          -- Register to help with timing
          rxLinkUp <= gearboxAligned                 after TPD_G;
          reset    <= misalignedEvent or reset160MHz after TPD_G;
+         -- Delay the header by 1 event
+         if (rxValidOut = '1') then
+            rxHeader <= bitReverse(header) after TPD_G;
+         end if;
       end if;
    end process;
 
