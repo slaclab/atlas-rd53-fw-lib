@@ -115,11 +115,12 @@ class Ctrl(pr.Device):
 
         self.add(pr.RemoteVariable(
             name         = 'DlyCmd', 
-            description  = '0x1 add 3.125 delay on the CMD output (used to deskew the CMD from discrete re-timing flip-flop IC)',
+            description  = '0x1: add 3.125 ns delay on the CMD output (used to deskew the CMD from discrete re-timing flip-flop IC)',
             offset       = 0x808,
             bitSize      = 1, 
             bitOffset    = 1,
             mode         = 'RW',
+            units        = '3.125 ns',
         ))         
         
         for i in range(4):
