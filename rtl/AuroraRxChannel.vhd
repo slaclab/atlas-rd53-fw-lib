@@ -175,7 +175,8 @@ begin
          AXIS_CONFIG_G => AXIS_CONFIG_G)
       port map (
          clk160MHz    => clk160MHz,
-         rst160MHz    => rst160MHz,
+         -- rst160MHz    => rst160MHz,
+         rst160MHz    => '1', -- Disabling the config path while debugging
          -- Data Tap Interface
          debugStream  => debugStream,
          rxLinkUp     => rxLinkUp,
@@ -251,26 +252,49 @@ begin
             if (valid(r.cnt) = '1') or (r.enable(r.cnt) = '0') then
                -- Accept the data
                v.rdEn(r.cnt) := '1';
-               -- Check for data header
-               if (header(r.cnt) = "01") then
-                  -- Move the data
-                  v.dataMaster.tValid             := r.enable(r.cnt);
-                  v.dataMaster.tData(63 downto 0) := data(r.cnt);
-               -- Check for data in service header
-               elsif (header(r.cnt) = "10") and (data(r.cnt)(63 downto 32) = x"1E04_0000") then
-                  -- Move the data
-                  v.dataMaster.tValid              := r.enable(r.cnt);
-                  v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
-                  v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
-               -- Check for AutoRead or command responds
-               elsif (header(r.cnt) = "10") and (
-                  (data(r.cnt)(63 downto 56) = x"B4") or  -- both register fields are of type AutoRead
-                  (data(r.cnt)(63 downto 56) = x"55") or  -- first frame is AutoRead, second is from a read register command
-                  (data(r.cnt)(63 downto 56) = x"99") or  -- first is from a read register command, second frame is AutoRead
-                  (data(r.cnt)(63 downto 56) = x"D2")) then  -- both register fields are from read register commands
-                  v.dataMaster.tValid             := r.enable(r.cnt);
-                  v.dataMaster.tData(63 downto 0) := data(r.cnt);
+               
+               -- Setup the debugging when AXI stream width is 128-bit (not used in 64-bit mode)
+               v.dataMaster.tData(127 downto 124) := enable;               
+               v.dataMaster.tData(123 downto 120) := invData;                        
+               v.dataMaster.tData(119 downto 118) := toSlv(r.cnt,2);               
+               v.dataMaster.tData(117 downto 116) := selectRate;   
+               v.dataMaster.tData(115 downto 114) := rxPhyXbar(0);               
+               v.dataMaster.tData(113 downto 112) := rxPhyXbar(1);               
+               v.dataMaster.tData(111 downto 110) := rxPhyXbar(2);               
+               v.dataMaster.tData(109 downto 108) := rxPhyXbar(3);               
+               v.dataMaster.tData(107)            := debugStream;               
+               v.dataMaster.tData(106 downto 66)  := (others=>'0');               
+               v.dataMaster.tData(65 downto 64)   := header(r.cnt); 
+               
+               -- Setup the data bus
+               v.dataMaster.tData(63 downto 0)  := data(r.cnt);
+               
+               -- Check if not an IDLE frame
+               if (header(r.cnt) = "01") or ((header(r.cnt) = "10") and (data(r.cnt)(63 downto 56) /= x"78")) then
+                  -- Send all non-IDLE frames
+                  v.dataMaster.tValid := r.enable(r.cnt);
                end if;
+               
+               -- -- Check for data header
+               -- if (header(r.cnt) = "01") then
+                  -- -- Move the data
+                  -- v.dataMaster.tValid             := r.enable(r.cnt);
+               -- -- Check for data in service header
+               -- elsif (header(r.cnt) = "10") and (data(r.cnt)(63 downto 32) = x"1E04_0000") then
+                  -- -- Move the data
+                  -- v.dataMaster.tValid              := r.enable(r.cnt);
+                  -- v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
+                  -- v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
+               -- -- Check for AutoRead or command responds
+               -- elsif (header(r.cnt) = "10") and (
+                  -- (data(r.cnt)(63 downto 56) = x"B4") or  -- both register fields are of type AutoRead
+                  -- (data(r.cnt)(63 downto 56) = x"55") or  -- first frame is AutoRead, second is from a read register command
+                  -- (data(r.cnt)(63 downto 56) = x"99") or  -- first is from a read register command, second frame is AutoRead
+                  -- (data(r.cnt)(63 downto 56) = x"D2")) then  -- both register fields are from read register commands
+                  -- v.dataMaster.tValid             := r.enable(r.cnt);
+                  -- v.dataMaster.tData(63 downto 0) := data(r.cnt);
+               -- end if;
+               
                -- Increment the counter
                if r.cnt = 3 then
                   v.cnt := 0;

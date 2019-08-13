@@ -69,7 +69,8 @@ architecture mapping of AtlasRd53Core is
 
    constant INT_AXIS_CONFIG_C : AxiStreamConfigType :=
       ssiAxiStreamConfig(
-         dataBytes => 8,                -- 64-bit width
+         -- dataBytes => 8,                -- 64-bit width
+         dataBytes => 16,                -- 128-bit width for debugging 
          tKeepMode => TKEEP_COMP_C,
          tUserMode => TUSER_FIRST_LAST_C,
          tDestBits => 0,
@@ -250,9 +251,9 @@ begin
          mAxisMaster => txDataMaster,
          mAxisSlave  => txDataSlave);
 
-   ---------------------------------------------------------
-   -- Batch Multiple 64-bit data words into large AXIS frame
-   ---------------------------------------------------------
+   --------------------------------------------------
+   -- Batch Multiple data words into large AXIS frame
+   --------------------------------------------------
    U_DataBatcher : entity work.AtlasRd53RxDataBatcher
       generic map (
          TPD_G         => TPD_G,

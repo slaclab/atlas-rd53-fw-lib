@@ -2,7 +2,7 @@
 -- File       : AtlasRd53RxDataBatcher.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Batch Multiple 64-bit data words into large AXIS frame
+-- Description: Batch Multiple data words into large AXIS frame
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
