@@ -96,7 +96,7 @@ begin
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
-         SLAVE_READY_EN_G    => false,
+         SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
@@ -150,7 +150,7 @@ begin
          -- MEMORY_TYPE_G       => MEMORY_TYPE_G,
          MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => 9,
+         FIFO_ADDR_WIDTH_G   => 10,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
          MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
