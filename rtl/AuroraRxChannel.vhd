@@ -176,7 +176,7 @@ begin
       port map (
          clk160MHz    => clk160MHz,
          -- rst160MHz    => rst160MHz,
-         rst160MHz    => '1', -- Disabling the config path while debugging
+         rst160MHz    => '1',  -- Disabling the config path while debugging
          -- Data Tap Interface
          debugStream  => debugStream,
          rxLinkUp     => rxLinkUp,
@@ -187,7 +187,8 @@ begin
          autoReadReg  => autoReadReg,
          configMaster => configMaster);
 
-   comb : process (afull, data, enable, header, r, rst160MHz, rxLinkUp, valid) is
+   comb : process (afull, data, debugStream, enable, header, invData, r,
+                   rst160MHz, rxLinkUp, rxPhyXbar, selectRate, valid) is
       variable v      : RegType;
       variable i      : natural;
       variable phyRdy : sl;
@@ -252,29 +253,29 @@ begin
             if (valid(r.cnt) = '1') or (r.enable(r.cnt) = '0') then
                -- Accept the data
                v.rdEn(r.cnt) := '1';
-               
+
                -- Setup the debugging when AXI stream width is 128-bit (not used in 64-bit mode)
-               v.dataMaster.tData(127 downto 124) := enable;               
-               v.dataMaster.tData(123 downto 120) := invData;                        
-               v.dataMaster.tData(119 downto 118) := toSlv(r.cnt,2);               
-               v.dataMaster.tData(117 downto 116) := selectRate;   
-               v.dataMaster.tData(115 downto 114) := rxPhyXbar(0);               
-               v.dataMaster.tData(113 downto 112) := rxPhyXbar(1);               
-               v.dataMaster.tData(111 downto 110) := rxPhyXbar(2);               
-               v.dataMaster.tData(109 downto 108) := rxPhyXbar(3);               
-               v.dataMaster.tData(107)            := debugStream;               
-               v.dataMaster.tData(106 downto 66)  := (others=>'0');               
-               v.dataMaster.tData(65 downto 64)   := header(r.cnt); 
-               
+               v.dataMaster.tData(127 downto 124) := enable;
+               v.dataMaster.tData(123 downto 120) := invData;
+               v.dataMaster.tData(119 downto 118) := toSlv(r.cnt, 2);
+               v.dataMaster.tData(117 downto 116) := selectRate;
+               v.dataMaster.tData(115 downto 114) := rxPhyXbar(0);
+               v.dataMaster.tData(113 downto 112) := rxPhyXbar(1);
+               v.dataMaster.tData(111 downto 110) := rxPhyXbar(2);
+               v.dataMaster.tData(109 downto 108) := rxPhyXbar(3);
+               v.dataMaster.tData(107)            := debugStream;
+               v.dataMaster.tData(106 downto 66)  := (others => '0');
+               v.dataMaster.tData(65 downto 64)   := header(r.cnt);
+
                -- Setup the data bus
-               v.dataMaster.tData(63 downto 0)  := data(r.cnt);
-               
+               v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
                -- Check if not an IDLE frame
                if (header(r.cnt) = "01") or ((header(r.cnt) = "10") and (data(r.cnt)(63 downto 56) /= x"78")) then
                   -- Send all non-IDLE frames
                   v.dataMaster.tValid := r.enable(r.cnt);
                end if;
-               
+
                -- -- Check for data header
                -- if (header(r.cnt) = "01") then
                   -- -- Move the data
@@ -294,7 +295,7 @@ begin
                   -- v.dataMaster.tValid             := r.enable(r.cnt);
                   -- v.dataMaster.tData(63 downto 0) := data(r.cnt);
                -- end if;
-               
+
                -- Increment the counter
                if r.cnt = 3 then
                   v.cnt := 0;
