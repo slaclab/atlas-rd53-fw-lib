@@ -55,24 +55,32 @@ architecture rtl of AuroraRxChannel is
       MOVE_S);
 
    type RegType is record
-      fifoRst    : slv(3 downto 0);
-      enable     : slv(3 downto 0);
-      aligned    : slv(3 downto 0);
-      chBond     : sl;
-      rdEn       : slv(3 downto 0);
-      cnt        : natural range 0 to 3;
-      dataMaster : AxiStreamMasterType;
-      state      : StateType;
+      idleDet     : sl;
+      autoDet     : sl;
+      readBackDet : sl;
+      errorDet    : sl;
+      fifoRst     : slv(3 downto 0);
+      enable      : slv(3 downto 0);
+      aligned     : slv(3 downto 0);
+      chBond      : sl;
+      rdEn        : slv(3 downto 0);
+      cnt         : natural range 0 to 3;
+      dataMaster  : AxiStreamMasterType;
+      state       : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      fifoRst    => (others => '1'),
-      enable     => (others => '0'),
-      aligned    => (others => '0'),
-      chBond     => '0',
-      rdEn       => (others => '0'),
-      cnt        => 0,
-      dataMaster => AXI_STREAM_MASTER_INIT_C,
-      state      => INIT_S);
+      idleDet     => '0',
+      autoDet     => '0',
+      readBackDet => '0',
+      errorDet    => '0',
+      fifoRst     => (others => '1'),
+      enable      => (others => '0'),
+      aligned     => (others => '0'),
+      chBond      => '0',
+      rdEn        => (others => '0'),
+      cnt         => 0,
+      dataMaster  => AXI_STREAM_MASTER_INIT_C,
+      state       => INIT_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -175,8 +183,7 @@ begin
          AXIS_CONFIG_G => AXIS_CONFIG_G)
       port map (
          clk160MHz    => clk160MHz,
-         -- rst160MHz    => rst160MHz,
-         rst160MHz    => '1',  -- Disabling the config path while debugging
+         rst160MHz    => rst160MHz,
          -- Data Tap Interface
          debugStream  => debugStream,
          rxLinkUp     => rxLinkUp,
@@ -187,8 +194,8 @@ begin
          autoReadReg  => autoReadReg,
          configMaster => configMaster);
 
-   comb : process (afull, data, debugStream, enable, header, invData, r,
-                   rst160MHz, rxLinkUp, rxPhyXbar, selectRate, valid) is
+   comb : process (afull, data, enable, header, invData, r, rst160MHz,
+                   rxLinkUp, rxPhyXbar, selectRate, valid) is
       variable v      : RegType;
       variable i      : natural;
       variable phyRdy : sl;
@@ -200,6 +207,9 @@ begin
       v.rdEn              := x"0";
       v.aligned           := x"0";
       v.dataMaster.tValid := '0';
+      v.autoDet           := '0';
+      v.readBackDet       := '0';
+      v.errorDet          := '0';
 
       -- Shirt Register
       v.fifoRst := r.fifoRst(2 downto 0) & '0';
@@ -249,10 +259,87 @@ begin
          when MOVE_S =>
             -- Set the flag
             v.chBond := '1';
+
             -- Check for data or masked off channel
             if (valid(r.cnt) = '1') or (r.enable(r.cnt) = '0') then
+
                -- Accept the data
                v.rdEn(r.cnt) := '1';
+
+               -- Check for data header
+               if (header(r.cnt) = "01") then
+                  -- Move the data
+                  v.dataMaster.tValid             := r.enable(r.cnt);
+                  v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+               -- Check for service header
+               elsif (header(r.cnt) = "10") then
+
+                  -- Check for data in service header
+                  if (data(r.cnt)(63 downto 32) = x"1E04_0000") then
+                     -- Move the data
+                     v.dataMaster.tValid              := r.enable(r.cnt);
+                     v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
+                     v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
+
+                  -- Check for both register fields are of type AutoRead
+                  elsif (data(r.cnt)(63 downto 56) = x"B4") then
+                     -- Set the debug flags
+                     v.autoDet                       := '1';
+                     v.readBackDet                   := '0';
+                     -- Move the data
+                     v.dataMaster.tValid             := r.enable(r.cnt);
+                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+                  -- Check for first frame is AutoRead, second is from a read register command
+                  elsif (data(r.cnt)(63 downto 56) = x"55") then
+                     -- Set the debug flags
+                     v.autoDet                       := '1';
+                     v.readBackDet                   := '1';
+                     -- Move the data
+                     v.dataMaster.tValid             := r.enable(r.cnt);
+                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+                  -- Check for first is from a read register command, second frame is AutoRead
+                  elsif (data(r.cnt)(63 downto 56) = x"99") then
+                     -- Set the debug flags
+                     v.autoDet                       := '1';
+                     v.readBackDet                   := '1';
+                     -- Move the data
+                     v.dataMaster.tValid             := r.enable(r.cnt);
+                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+                  -- Check for both register fields are from read register commands
+                  elsif (data(r.cnt)(63 downto 56) = x"D2") then
+                     -- Set the debug flags
+                     v.autoDet                       := '0';
+                     v.readBackDet                   := '1';
+                     -- Move the data
+                     v.dataMaster.tValid             := r.enable(r.cnt);
+                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+                  -- Check for both register fields are from read register commands
+                  elsif (data(r.cnt)(63 downto 56) = x"CC") then
+                     -- Set the debug flag
+                     v.errorDet := '1';
+
+                  end if;
+
+                  -- Check for IDLE
+                  if (data(r.cnt)(63 downto 56) = x"78") then
+                     v.idleDet := '1';
+                  else
+                     v.idleDet := '0';
+                  end if;
+
+               end if;
+
+               -- Increment the counter
+               if r.cnt = 3 then
+                  v.cnt := 0;
+               else
+                  v.cnt := r.cnt + 1;
+               end if;
 
                -- Setup the debugging when AXI stream width is 128-bit (not used in 64-bit mode)
                v.dataMaster.tData(127 downto 124) := enable;
@@ -263,45 +350,11 @@ begin
                v.dataMaster.tData(113 downto 112) := rxPhyXbar(1);
                v.dataMaster.tData(111 downto 110) := rxPhyXbar(2);
                v.dataMaster.tData(109 downto 108) := rxPhyXbar(3);
-               v.dataMaster.tData(107)            := debugStream;
-               v.dataMaster.tData(106 downto 66)  := (others => '0');
+               v.dataMaster.tData(107)            := v.autoDet;
+               v.dataMaster.tData(106)            := v.readBackDet;
+               v.dataMaster.tData(105 downto 66)  := (others => '0');
                v.dataMaster.tData(65 downto 64)   := header(r.cnt);
 
-               -- Setup the data bus
-               v.dataMaster.tData(63 downto 0) := data(r.cnt);
-
-               -- Check if not an IDLE frame
-               if (header(r.cnt) = "01") or ((header(r.cnt) = "10") and (data(r.cnt)(63 downto 56) /= x"78")) then
-                  -- Send all non-IDLE frames
-                  v.dataMaster.tValid := r.enable(r.cnt);
-               end if;
-
-               -- -- Check for data header
-               -- if (header(r.cnt) = "01") then
-                  -- -- Move the data
-                  -- v.dataMaster.tValid             := r.enable(r.cnt);
-               -- -- Check for data in service header
-               -- elsif (header(r.cnt) = "10") and (data(r.cnt)(63 downto 32) = x"1E04_0000") then
-                  -- -- Move the data
-                  -- v.dataMaster.tValid              := r.enable(r.cnt);
-                  -- v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
-                  -- v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
-               -- -- Check for AutoRead or command responds
-               -- elsif (header(r.cnt) = "10") and (
-                  -- (data(r.cnt)(63 downto 56) = x"B4") or  -- both register fields are of type AutoRead
-                  -- (data(r.cnt)(63 downto 56) = x"55") or  -- first frame is AutoRead, second is from a read register command
-                  -- (data(r.cnt)(63 downto 56) = x"99") or  -- first is from a read register command, second frame is AutoRead
-                  -- (data(r.cnt)(63 downto 56) = x"D2")) then  -- both register fields are from read register commands
-                  -- v.dataMaster.tValid             := r.enable(r.cnt);
-                  -- v.dataMaster.tData(63 downto 0) := data(r.cnt);
-               -- end if;
-
-               -- Increment the counter
-               if r.cnt = 3 then
-                  v.cnt := 0;
-               else
-                  v.cnt := r.cnt + 1;
-               end if;
             end if;
       ----------------------------------------------------------------------
       end case;

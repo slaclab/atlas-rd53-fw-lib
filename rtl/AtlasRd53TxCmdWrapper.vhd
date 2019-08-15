@@ -150,7 +150,7 @@ begin
          -- MEMORY_TYPE_G       => MEMORY_TYPE_G,
          MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => 10,
+         FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
          MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))

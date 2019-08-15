@@ -48,18 +48,20 @@ architecture rtl of AtlasRd53TxCmd is
    type RegType is record
       syncCnt  : natural range 0 to (32/2)-1;
       cmd      : sl;
+      tData    : slv(31 downto 0);
       shiftReg : slv(31 downto 0);
       shiftCnt : slv(4 downto 0);
-      init     : slv(7 downto 0);
+      init     : slv(8 downto 0);
       cmdSlave : AxiStreamSlaveType;
       state    : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
       syncCnt  => 0,
       cmd      => '0',
+      tData    => NOP_DWORD_C,
       shiftReg => NOP_DWORD_C,
       shiftCnt => (others => '0'),
-      init     => x"FF",
+      init     => (others => '1'),
       cmdSlave => AXI_STREAM_SLAVE_INIT_C,
       state    => INIT_S);
 
@@ -93,12 +95,13 @@ begin
          case r.state is
             ----------------------------------------------------------------------
             when INIT_S =>
-               -- Decrement the counter
-               v.init := r.init -1;
                -- Check initialization completed
                if (r.init = 0) then
                   -- Next state
                   v.state := LISTEN_S;
+               else
+                  -- Decrement the counter
+                  v.init := r.init -1;                  
                end if;
             ----------------------------------------------------------------------
             when LISTEN_S =>
@@ -108,6 +111,8 @@ begin
                   v.cmdSlave.tReady := '1';
                   -- Move the data (only 32-bit data from the software)
                   v.shiftReg        := cmdMaster.tData(31 downto 0);
+                  -- Sample for simulation debugging
+                  v.tData           := cmdMaster.tData(31 downto 0);
                end if;
          ----------------------------------------------------------------------
          end case;
@@ -116,8 +121,8 @@ begin
          -- It is recommended that at lest one sync frame be inserted at least every 32 frames.
          --------------------------------------------------------------------------------------
          if (r.syncCnt = (32/2)-1) then  -- shift two frame into shiftReg
-            -- Check for NOP
-            if (v.shiftReg = NOP_DWORD_C) then
+            -- Check for NOP and not forwarding user config
+            if (v.shiftReg = NOP_DWORD_C) and (v.cmdSlave.tReady = '0') then
                -- Insert the SYNC frame
                v.shiftReg(15 downto 0) := SYNC_C;
                -- Reset the counter
