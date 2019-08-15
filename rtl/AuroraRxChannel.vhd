@@ -284,51 +284,41 @@ begin
 
                   -- Check for both register fields are of type AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"B4") then
-                     -- Set the debug flags
-                     v.autoDet                       := '1';
+                     -- Set the simulation debug flags
+                     v.autoDet                       := r.enable(r.cnt);
                      v.readBackDet                   := '0';
-                     -- Move the data
-                     v.dataMaster.tValid             := r.enable(r.cnt);
-                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
 
                   -- Check for first frame is AutoRead, second is from a read register command
                   elsif (data(r.cnt)(63 downto 56) = x"55") then
-                     -- Set the debug flags
-                     v.autoDet                       := '1';
-                     v.readBackDet                   := '1';
-                     -- Move the data
-                     v.dataMaster.tValid             := r.enable(r.cnt);
-                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     -- Set the simulation debug flags
+                     v.autoDet                       := r.enable(r.cnt);
+                     v.readBackDet                   := r.enable(r.cnt);
 
                   -- Check for first is from a read register command, second frame is AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"99") then
-                     -- Set the debug flags
-                     v.autoDet                       := '1';
-                     v.readBackDet                   := '1';
-                     -- Move the data
-                     v.dataMaster.tValid             := r.enable(r.cnt);
-                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     -- Set the simulation debug flags
+                     v.autoDet                       := r.enable(r.cnt);
+                     v.readBackDet                   := r.enable(r.cnt);
 
                   -- Check for both register fields are from read register commands
                   elsif (data(r.cnt)(63 downto 56) = x"D2") then
-                     -- Set the debug flags
+                     -- Set the simulation debug flags
                      v.autoDet                       := '0';
-                     v.readBackDet                   := '1';
-                     -- Move the data
-                     v.dataMaster.tValid             := r.enable(r.cnt);
-                     v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     v.readBackDet                   := r.enable(r.cnt);
 
                   -- Check for both register fields are from read register commands
                   elsif (data(r.cnt)(63 downto 56) = x"CC") then
-                     -- Set the debug flag
+                     -- Set the simulation debug flag
                      v.errorDet := '1';
 
                   end if;
 
                   -- Check for IDLE
                   if (data(r.cnt)(63 downto 56) = x"78") then
+                     -- Set the simulation debug flag
                      v.idleDet := '1';
                   else
+                     -- Set the simulation debug flag
                      v.idleDet := '0';
                   end if;
 

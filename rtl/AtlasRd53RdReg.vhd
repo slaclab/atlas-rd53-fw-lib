@@ -101,9 +101,6 @@ begin
                v.autoDet                      := '1';
                v.autoReadReg(i)(15 downto 0)  := rxData(i)(15 downto 0);
                v.autoReadReg(i)(31 downto 16) := rxData(i)(41 downto 26);
-               if (debugStream = '1') then
-                  fwdRdReg(i);
-               end if;
             -- First frame is AutoRead, second is from a read register command
             elsif (opCode(i) = x"55") then
                v.autoDet                     := '1';

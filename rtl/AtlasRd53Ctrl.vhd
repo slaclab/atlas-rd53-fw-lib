@@ -79,9 +79,10 @@ architecture rtl of AtlasRd53Ctrl is
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
-      debugStream    => '0',
+      debugStream    => '1',
       rxPhyXbar      => RX_MAPPING_G,
-      selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
+      -- selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
+      selectRate     => (others => '1'),  -- Default to 160 Mb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
       dlyCmd         => '0',
