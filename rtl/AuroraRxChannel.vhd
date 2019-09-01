@@ -276,7 +276,9 @@ begin
                elsif (header(r.cnt) = "10") then
 
                   -- Check for data in service header
-                  if (data(r.cnt)(63 downto 32) = x"1E04_0000") then
+                  --if (data(r.cnt)(63 downto 32) = x"1E04_0000") then 
+				  -- RD53a manual is wrong
+                  if (data(r.cnt)(63 downto 48) = x"1E04") then
                      -- Move the data
                      v.dataMaster.tValid              := r.enable(r.cnt);
                      v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
