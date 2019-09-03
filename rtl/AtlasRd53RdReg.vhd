@@ -72,7 +72,10 @@ begin
       begin
          -- Move the data
          v.configMaster.tValid             := '1';
-         v.configMaster.tData(63 downto 0) := rxData(index);
+         --v.configMaster.tData(63 downto 0) := rxData(index);
+		 --reverse the 64bit frame. So, in YARR software, will receive the rxData(63 downto 32) first, so will know ZZ at first
+         v.configMaster.tData(63 downto 32) := rxData(index)(31 downto  0);
+         v.configMaster.tData(31 downto  0) := rxData(index)(63 downto 32);
          -- Set the End of Frame (EOF) flag
          v.configMaster.tLast              := '1';
          -- Set Start of Frame (SOF) flag
