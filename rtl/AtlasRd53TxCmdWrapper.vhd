@@ -54,6 +54,15 @@ end entity AtlasRd53TxCmdWrapper;
 
 architecture rtl of AtlasRd53TxCmdWrapper is
 
+   constant AXIS_4BYTE_CONFIG_C : AxiStreamConfigType := (
+      TSTRB_EN_C    => false,
+      TDATA_BYTES_C => 4,
+      TDEST_BITS_C  => 0,
+      TID_BITS_C    => 0,
+      TKEEP_MODE_C  => TKEEP_COMP_C,
+      TUSER_BITS_C  => 0,
+      TUSER_MODE_C  => TUSER_FIRST_LAST_C);
+
    signal cmdMaster : AxiStreamMasterType;
    signal cmdSlave  : AxiStreamSlaveType;
 
@@ -105,7 +114,7 @@ begin
          FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => AXIS_CONFIG_G,
-         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+         MASTER_AXI_CONFIG_G => AXIS_4BYTE_CONFIG_C)
       port map (
          -- Slave Port
          sAxisClk    => axisClk,
@@ -140,20 +149,19 @@ begin
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
-         INT_PIPE_STAGES_G   => 0,
-         PIPE_STAGES_G       => 0,
+         INT_PIPE_STAGES_G   => 1,
+         PIPE_STAGES_G       => 1,
          SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 500,   -- less than 2**FIFO_ADDR_WIDTH_G
+         VALID_THOLD_G       => 8000,   -- less than 2**FIFO_ADDR_WIDTH_G
          VALID_BURST_MODE_G  => true,   -- bursting mode enabled
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
-         -- MEMORY_TYPE_G       => MEMORY_TYPE_G,
          MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
-         FIFO_ADDR_WIDTH_G   => 9,
+         FIFO_ADDR_WIDTH_G   => 13,
          -- AXI Stream Port Configurations
-         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+         SLAVE_AXI_CONFIG_G  => AXIS_4BYTE_CONFIG_C,
+         MASTER_AXI_CONFIG_G => AXIS_4BYTE_CONFIG_C)
       port map (
          -- Slave Port
          sAxisClk    => clk160MHz,
