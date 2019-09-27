@@ -40,9 +40,9 @@ end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
-   constant SLIP_CNT_C   : positive := 66;
-   constant SLIP_WAIT_C  : positive := 100;
-   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
+   constant SLIP_CNT_C   : positive         := 66;
+   constant SLIP_WAIT_C  : positive         := ite(SIMULATION_G, 100, 1000);
+   constant LOCKED_CNT_C : slv(31 downto 0) := ite(SIMULATION_G, x"00000064", x"00FFFFFF");
 
    type StateType is (
       UNLOCKED_S,
@@ -53,7 +53,7 @@ architecture rtl of AuroraRxGearboxAligner is
       dlyConfig   : slv(4 downto 0);
       slipCnt     : natural range 0 to SLIP_CNT_C-1;
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
-      goodCnt     : natural range 0 to LOCKED_CNT_C-1;
+      goodCnt     : slv(31 downto 0);
       slip        : sl;
       locked      : sl;
       state       : StateType;
@@ -63,7 +63,7 @@ architecture rtl of AuroraRxGearboxAligner is
       dlyConfig   => (others => '0'),
       slipCnt     => 0,
       slipWaitCnt => 0,
-      goodCnt     => 0,
+      goodCnt     => (others => '0'),
       slip        => '0',
       locked      => '0',
       state       => UNLOCKED_S);
@@ -88,23 +88,29 @@ begin
          when UNLOCKED_S =>
             -- Check for data
             if (rxHeaderValid = '1') then
+
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
 
-                  -- Set the flag
-                  v.slip := '1';
+                  -- Increment the counter
+                  v.dlyConfig := r.dlyConfig + 1;
 
-                  -- Check the slip counter
-                  if (r.slipCnt = SLIP_CNT_C-1) then
-                     -- Reset the counter
-                     v.slipCnt   := 0;
-                     -- Increment the counter
-                     v.dlyConfig := r.dlyConfig + 1;
-                  else
-                     -- Increment the counter
-                     v.slipCnt := r.slipCnt + 1;
+                  -- Check for counter roll over
+                  if (r.dlyConfig = "11111") then
+
+                     -- Set the flag
+                     v.slip := '1';
+
+                     -- Check the slip counter
+                     if (r.slipCnt = SLIP_CNT_C-1) then
+                        -- Reset the counter
+                        v.slipCnt := 0;
+                     else
+                        -- Increment the counter
+                        v.slipCnt := r.slipCnt + 1;
+                     end if;
+
                   end if;
-
 
                   -- Next state
                   v.state := SLIP_WAIT_S;
@@ -135,10 +141,10 @@ begin
                   -- Reset the flag
                   v.locked  := '0';
                   -- Reset the counter
-                  v.goodCnt := 0;
+                  v.goodCnt := (others => '0');
                   -- Next state
                   v.state   := UNLOCKED_S;
-               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
+               elsif (r.goodCnt /= LOCKED_CNT_C) then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
                else
