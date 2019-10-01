@@ -59,7 +59,7 @@ entity AtlasRd53Core is
       rst160MHz       : in  sl;
       -- Deserialization Interface
       serDesData      : in  Slv8Array(3 downto 0);
-      dlyCfg          : out Slv5Array(3 downto 0);
+      dlySlip         : out slv(3 downto 0);
       -- RD53 ASIC Serial Ports
       dPortCmdP       : out sl;
       dPortCmdN       : out sl);
@@ -175,7 +175,7 @@ begin
       port map (
          -- Deserialization Interface
          serDesData   => serDesData,
-         dlyCfg       => dlyCfg,
+         dlySlip      => dlySlip,
          -- Timing Interface
          clk160MHz    => clk160MHz,
          rst160MHz    => rst160MHz,

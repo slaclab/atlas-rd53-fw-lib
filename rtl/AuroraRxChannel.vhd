@@ -30,7 +30,7 @@ entity AuroraRxChannel is
    port (
       -- Deserialization Interface
       serDesData   : in  Slv8Array(3 downto 0);
-      dlyCfg       : out Slv5Array(3 downto 0);
+      dlySlip      : out slv(3 downto 0);
       -- Timing Interface
       clk160MHz    : in  sl;
       rst160MHz    : in  sl;
@@ -126,7 +126,7 @@ begin
          port map (
             -- RD53 ASIC Serial Interface
             serDesData => serDesData(i),
-            dlyCfg     => dlyCfg(i),
+            dlySlip    => dlySlip(i),
             polarity   => invData(i),
             selectRate => selectRate,
             -- Timing Interface

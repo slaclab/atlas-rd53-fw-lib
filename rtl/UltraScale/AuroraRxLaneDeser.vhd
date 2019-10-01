@@ -39,7 +39,7 @@ entity AuroraRxLaneDeser is
       clk160MHz     : in  sl;
       rst160MHz     : in  sl;
       -- Delay Configuration
-      dlyCfgIn      : in  slv(4 downto 0);
+      dlySlipIn     : in  sl;
       -- Output
       dataOut       : out slv(7 downto 0));
 end AuroraRxLaneDeser;
@@ -47,7 +47,6 @@ end AuroraRxLaneDeser;
 architecture mapping of AuroraRxLaneDeser is
 
    signal dPortData : sl;
-   signal dlyCfg    : slv(8 downto 0) := (others => '0');
    signal dataDly   : sl;
    signal empty     : sl;
    signal rdEn      : sl;
@@ -63,8 +62,6 @@ begin
          IB => dPortDataN,
          O  => dPortData);
 
-   dlyCfg(8 downto 4) <= dlyCfgIn;
-
    U_DELAY : IDELAYE3
       generic map (
          DELAY_FORMAT     => "COUNT",
@@ -73,20 +70,20 @@ begin
          REFCLK_FREQUENCY => REF_FREQ_G,
          CASCADE          => "NONE",
          DELAY_SRC        => "IDATAIN",
-         DELAY_TYPE       => "VAR_LOAD")
+         DELAY_TYPE       => "VARIABLE")
       port map(
          DATAIN      => '0',
          IDATAIN     => dPortData,
          DATAOUT     => dataDly,
          CLK         => clk160MHz,
-         CE          => '0',
+         CE          => dlySlipIn,
          RST         => '0',
-         INC         => '0',
-         LOAD        => '1',
+         INC         => '1',
+         LOAD        => '0',
          EN_VTC      => '0',
          CASC_IN     => '0',
          CASC_RETURN => '0',
-         CNTVALUEIN  => dlyCfg);
+         CNTVALUEIN  => (others => '0'));
 
    U_ISERDES : ISERDESE3
       generic map (

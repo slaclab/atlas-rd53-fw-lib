@@ -31,17 +31,17 @@ entity AuroraRxLaneDeser is
       XIL_DEVICE_G    : string := "7SERIES");
    port (
       -- RD53 ASIC Serial Interface
-      dPortDataP       : in  sl;
-      dPortDataN       : in  sl;
-      iDelayCtrlRdy    : in  sl;
+      dPortDataP    : in  sl;
+      dPortDataN    : in  sl;
+      iDelayCtrlRdy : in  sl;
       -- Timing Interface
-      clk640MHz        : in  sl;
-      clk160MHz        : in  sl;
-      rst160MHz        : in  sl;
+      clk640MHz     : in  sl;
+      clk160MHz     : in  sl;
+      rst160MHz     : in  sl;
       -- Delay Configuration
-      dlyCfgIn         : in  slv(4 downto 0);
+      dlySlipIn     : in  sl;
       -- Output
-      dataOut          : out slv(7 downto 0));
+      dataOut       : out slv(7 downto 0));
 end AuroraRxLaneDeser;
 
 architecture mapping of AuroraRxLaneDeser is
@@ -67,19 +67,19 @@ begin
          HIGH_PERFORMANCE_MODE => "TRUE",
          IDELAY_VALUE          => 0,
          DELAY_SRC             => "IDATAIN",
-         IDELAY_TYPE           => "VAR_LOAD")
+         IDELAY_TYPE           => "VARIABLE")
       port map(
          DATAIN     => '0',
          IDATAIN    => dPortData,
          DATAOUT    => dataDly,
          C          => clk160MHz,
-         CE         => '0',
-         INC        => '0',
-         LD         => '1',
+         CE         => dlySlipIn,
+         INC        => '1',
+         LD         => '0',
          LDPIPEEN   => '0',
          REGRST     => '0',
          CINVCTRL   => '0',
-         CNTVALUEIN => dlyCfgIn);
+         CNTVALUEIN => (others => '0'));
 
    U_ISERDES : ISERDESE2
       generic map (
