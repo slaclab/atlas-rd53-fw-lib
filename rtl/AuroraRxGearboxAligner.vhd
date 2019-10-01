@@ -33,16 +33,17 @@ entity AuroraRxGearboxAligner is
       rst           : in  sl;
       rxHeader      : in  slv(1 downto 0);
       rxHeaderValid : in  sl;
-      slip          : out sl;
-      dlyConfig     : out slv(4 downto 0);
+      bitSlip       : out sl;
+      dlySlip       : out sl;
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
-   constant SLIP_CNT_C   : positive         := 66;
-   constant SLIP_WAIT_C  : positive         := ite(SIMULATION_G, 100, 1000);
-   constant LOCKED_CNT_C : slv(31 downto 0) := ite(SIMULATION_G, x"00000064", x"00FFFFFF");
+   constant SLIP_CNT_C   : positive := 66;
+   constant SLIP_WAIT_C  : positive := 256;
+   constant GOOD_COUNT_C : integer  := 1024;
+   constant BAD_COUNT_C  : integer  := 1;
 
    type StateType is (
       UNLOCKED_S,
@@ -50,21 +51,23 @@ architecture rtl of AuroraRxGearboxAligner is
       LOCKED_S);
 
    type RegType is record
-      dlyConfig   : slv(4 downto 0);
-      slipCnt     : natural range 0 to SLIP_CNT_C-1;
-      slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
-      goodCnt     : slv(31 downto 0);
-      slip        : sl;
+      slipCnt     : natural range 0 to SLIP_CNT_C;
+      slipWaitCnt : natural range 0 to SLIP_WAIT_C;
+      goodCount   : natural range 0 to GOOD_COUNT_C;
+      badCount    : natural range 0 to BAD_COUNT_C;
+      bitSlip     : sl;
+      dlySlip     : sl;
       locked      : sl;
       state       : StateType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      dlyConfig   => (others => '0'),
       slipCnt     => 0,
       slipWaitCnt => 0,
-      goodCnt     => (others => '0'),
-      slip        => '0',
+      goodCount   => 0,
+      badCount    => 0,
+      bitSlip     => '0',
+      dlySlip     => '0',
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -80,7 +83,8 @@ begin
       v := r;
 
       -- Reset strobes
-      v.slip := '0';
+      v.bitSlip := '0';
+      v.dlySlip := '0';
 
       -- State Machine
       case r.state is
@@ -92,24 +96,21 @@ begin
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
 
-                  -- Increment the counter
-                  v.dlyConfig := r.dlyConfig + 1;
+                  -- Set the flag
+                  v.bitSlip := '1';
 
-                  -- Check for counter roll over
-                  if (r.dlyConfig = "11111") then
+                  -- Check the slip counter
+                  if (r.slipCnt = SLIP_CNT_C-1) then
+
+                     -- Reset the counter
+                     v.slipCnt := 0;
 
                      -- Set the flag
-                     v.slip := '1';
+                     v.dlySlip := '1';
 
-                     -- Check the slip counter
-                     if (r.slipCnt = SLIP_CNT_C-1) then
-                        -- Reset the counter
-                        v.slipCnt := 0;
-                     else
-                        -- Increment the counter
-                        v.slipCnt := r.slipCnt + 1;
-                     end if;
-
+                  else
+                     -- Increment the counter
+                     v.slipCnt := r.slipCnt + 1;
                   end if;
 
                   -- Next state
@@ -136,30 +137,55 @@ begin
          when LOCKED_S =>
             -- Check for data
             if (rxHeaderValid = '1') then
+
+               -- Increment the counter
+               v.goodCount := r.goodCount + 1;
+
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
-                  -- Reset the flag
-                  v.locked  := '0';
-                  -- Reset the counter
-                  v.goodCnt := (others => '0');
-                  -- Next state
-                  v.state   := UNLOCKED_S;
-               elsif (r.goodCnt /= LOCKED_CNT_C) then
-                  -- Increment the counter
-                  v.goodCnt := r.goodCnt + 1;
-               else
-                  -- Set the flag
-                  v.locked := '1';
+                  -- Check for not roll over
+                  if (r.badCount /= BAD_COUNT_C) then
+                     -- Increment the counter
+                     v.badCount := r.badCount + 1;
+                  end if;
                end if;
+
+            end if;
+
+            -- Check the bad counter
+            if (r.badCount = BAD_COUNT_C) then
+
+               -- Reset the counter
+               v.goodCount := 0;
+               v.badCount  := 0;
+
+               -- Reset the flag
+               v.locked := '0';
+
+               -- Set the flag
+               v.dlySlip := '1';
+
+               -- Next state
+               v.state := UNLOCKED_S;
+
+            -- Check the counter
+            elsif (r.goodCount = GOOD_COUNT_C-1) then
+
+               -- Reset the counter
+               v.goodCount := 0;
+               v.badCount  := 0;
+
+               -- Set the flag
+               v.locked := '1';
+
             end if;
       ----------------------------------------------------------------------
       end case;
 
-
       -- Outputs 
-      locked    <= r.locked;
-      slip      <= r.slip;
-      dlyConfig <= r.dlyConfig;
+      locked  <= r.locked;
+      bitSlip <= r.bitSlip;
+      dlySlip <= r.dlySlip;
 
       -- Reset
       if (rst = '1') then
@@ -178,4 +204,4 @@ begin
       end if;
    end process seq;
 
-end architecture rtl;
+end rtl;

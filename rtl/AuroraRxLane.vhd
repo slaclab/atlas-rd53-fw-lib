@@ -30,7 +30,7 @@ entity AuroraRxLane is
    port (
       -- RD53 ASIC Serial Interface
       serDesData : in  slv(7 downto 0);
-      dlyCfg     : out slv(4 downto 0);
+      dlySlip    : out sl;
       polarity   : in  sl;
       selectRate : in  slv(1 downto 0);
       -- Timing Interface
@@ -45,6 +45,10 @@ end AuroraRxLane;
 
 architecture mapping of AuroraRxLane is
 
+   ------------------------------------------------------------------------------------------------------
+   -- Scrambler Taps: G(x) = 1 + x^39 + x^58 (Equation 5-1)
+   -- https://www.xilinx.com/support/documentation/ip_documentation/aurora_64b66b_protocol_spec_sp011.pdf
+   ------------------------------------------------------------------------------------------------------
    constant SCRAMBLER_TAPS_C : IntegerArray := (0 => 39, 1 => 58);
 
    signal serDesDataMask : slv(7 downto 0);
@@ -57,7 +61,7 @@ architecture mapping of AuroraRxLane is
    signal phyRxHeader : slv(1 downto 0);
    signal phyRxData   : slv(63 downto 0);
 
-   signal bitslip          : sl;
+   signal bitSlip          : sl;
    signal unscramblerValid : sl;
    signal gearboxAligned   : sl;
 
@@ -84,24 +88,25 @@ begin
    ----------------------------
    serDesDataMask <= serDesData when(polarity = '0') else not(serDesData);
 
-   -----------------
-   -- Gearbox Module
-   -----------------
+   -------------------------------------------------------------------------------------------------------------
+   -- Gearbox Module: Refer to "Figure 7-1: Serialization Order for Aurora 64B/66B Block Codes" for bit ordering
+   -- https://www.xilinx.com/support/documentation/ip_documentation/aurora_64b66b_protocol_spec_sp011.pdf
+   -------------------------------------------------------------------------------------------------------------
    U_Gearbox_1280Mbps : entity work.Gearbox
       generic map (
          TPD_G          => TPD_G,
          SLAVE_WIDTH_G  => 8,
          MASTER_WIDTH_G => 66)
       port map (
-         clk                      => clk160MHz,
-         rst                      => reset160MHz,
-         slip                     => bitslip,
-         slaveData(7 downto 0)    => serDesDataMask,
-         slaveValid               => '1',
-         masterData(63 downto 0)  => phyRxDataVec(0),
-         masterData(65 downto 64) => phyRxHeaderVec(0),
-         masterValid              => phyRxValidVec(0),
-         masterReady              => '1');
+         clk                     => clk160MHz,
+         rst                     => reset160MHz,
+         slip                    => bitslip,
+         slaveData(7 downto 0)   => serDesDataMask,
+         slaveValid              => '1',
+         masterData(1 downto 0)  => phyRxHeaderVec(0),
+         masterData(65 downto 2) => phyRxDataVec(0),
+         masterValid             => phyRxValidVec(0),
+         masterReady             => '1');
 
    U_Gearbox_640Mbps : entity work.Gearbox
       generic map (
@@ -109,18 +114,18 @@ begin
          SLAVE_WIDTH_G  => 4,
          MASTER_WIDTH_G => 66)
       port map (
-         clk                      => clk160MHz,
-         rst                      => reset160MHz,
-         slip                     => bitslip,
-         slaveData(0)             => serDesDataMask(0),
-         slaveData(1)             => serDesDataMask(2),
-         slaveData(2)             => serDesDataMask(4),
-         slaveData(3)             => serDesDataMask(6),
-         slaveValid               => '1',
-         masterData(63 downto 0)  => phyRxDataVec(1),
-         masterData(65 downto 64) => phyRxHeaderVec(1),
-         masterValid              => phyRxValidVec(1),
-         masterReady              => '1');
+         clk                     => clk160MHz,
+         rst                     => reset160MHz,
+         slip                    => bitslip,
+         slaveData(0)            => serDesDataMask(0),
+         slaveData(1)            => serDesDataMask(2),
+         slaveData(2)            => serDesDataMask(4),
+         slaveData(3)            => serDesDataMask(6),
+         slaveValid              => '1',
+         masterData(1 downto 0)  => phyRxHeaderVec(1),
+         masterData(65 downto 2) => phyRxDataVec(1),
+         masterValid             => phyRxValidVec(1),
+         masterReady             => '1');
 
    U_Gearbox_320Mbps : entity work.Gearbox
       generic map (
@@ -128,16 +133,16 @@ begin
          SLAVE_WIDTH_G  => 2,
          MASTER_WIDTH_G => 66)
       port map (
-         clk                      => clk160MHz,
-         rst                      => reset160MHz,
-         slip                     => bitslip,
-         slaveData(0)             => serDesDataMask(0),
-         slaveData(1)             => serDesDataMask(4),
-         slaveValid               => '1',
-         masterData(63 downto 0)  => phyRxDataVec(2),
-         masterData(65 downto 64) => phyRxHeaderVec(2),
-         masterValid              => phyRxValidVec(2),
-         masterReady              => '1');
+         clk                     => clk160MHz,
+         rst                     => reset160MHz,
+         slip                    => bitslip,
+         slaveData(0)            => serDesDataMask(0),
+         slaveData(1)            => serDesDataMask(4),
+         slaveValid              => '1',
+         masterData(1 downto 0)  => phyRxHeaderVec(2),
+         masterData(65 downto 2) => phyRxDataVec(2),
+         masterValid             => phyRxValidVec(2),
+         masterReady             => '1');
 
    U_Gearbox_160Mbps : entity work.Gearbox
       generic map (
@@ -145,15 +150,15 @@ begin
          SLAVE_WIDTH_G  => 1,
          MASTER_WIDTH_G => 66)
       port map (
-         clk                      => clk160MHz,
-         rst                      => reset160MHz,
-         slip                     => bitslip,
-         slaveData(0)             => serDesDataMask(0),
-         slaveValid               => '1',
-         masterData(63 downto 0)  => phyRxDataVec(3),
-         masterData(65 downto 64) => phyRxHeaderVec(3),
-         masterValid              => phyRxValidVec(3),
-         masterReady              => '1');
+         clk                     => clk160MHz,
+         rst                     => reset160MHz,
+         slip                    => bitslip,
+         slaveData(0)            => serDesDataMask(0),
+         slaveValid              => '1',
+         masterData(1 downto 0)  => phyRxHeaderVec(3),
+         masterData(65 downto 2) => phyRxDataVec(3),
+         masterValid             => phyRxValidVec(3),
+         masterReady             => '1');
 
    ------------------------------------------------------------
    -- "RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same
@@ -191,8 +196,8 @@ begin
          rst           => reset160MHz,
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
-         slip          => bitslip,
-         dlyConfig     => dlyCfg,
+         bitSlip       => bitslip,
+         dlySlip       => dlySlip,
          locked        => gearboxAligned);
 
    ---------------------------------
@@ -216,8 +221,9 @@ begin
          outputData     => data,
          outputSideband => header);
 
-   rxValid <= rxValidOut;
-   rxData  <= bitReverse(data);
+   rxValid  <= rxValidOut;
+   rxData   <= bitReverse(data);
+   rxHeader <= bitReverse(header);
 
    U_Reset : entity work.SynchronizerOneShot
       generic map (
@@ -237,10 +243,6 @@ begin
          -- Register to help with timing
          rxLinkUp <= gearboxAligned                 after TPD_G;
          reset    <= misalignedEvent or reset160MHz after TPD_G;
-         -- Delay the header by 1 event
-         if (rxValidOut = '1') then
-            rxHeader <= bitReverse(header) after TPD_G;
-         end if;
       end if;
    end process;
 
