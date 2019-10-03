@@ -43,7 +43,7 @@ architecture rtl of AuroraRxGearboxAligner is
    constant SLIP_CNT_C   : positive := 66;
    constant SLIP_WAIT_C  : positive := 256;
    constant GOOD_COUNT_C : integer  := 1024;
-   constant BAD_COUNT_C  : integer  := 1;
+   constant BAD_COUNT_C  : integer  := 2;
 
    type StateType is (
       UNLOCKED_S,
@@ -163,10 +163,24 @@ begin
                v.locked := '0';
 
                -- Set the flag
-               v.dlySlip := '1';
+               v.bitSlip := '1';
+
+               -- Check the slip counter
+               if (r.slipCnt = SLIP_CNT_C-1) then
+
+                  -- Reset the counter
+                  v.slipCnt := 0;
+
+                  -- Set the flag
+                  v.dlySlip := '1';
+
+               else
+                  -- Increment the counter
+                  v.slipCnt := r.slipCnt + 1;
+               end if;
 
                -- Next state
-               v.state := UNLOCKED_S;
+               v.state := SLIP_WAIT_S;
 
             -- Check the counter
             elsif (r.goodCount = GOOD_COUNT_C-1) then
