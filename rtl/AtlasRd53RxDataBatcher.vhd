@@ -81,7 +81,9 @@ begin
       v := r;
 
       -- Reset the flags
-      v.timedOut   := '0';
+      v.timedOut := '0';
+
+      -- Flow control
       v.sDataSlave := AXI_STREAM_SLAVE_INIT_C;
       if mDataSlave.tReady = '1' then
          v.mDataMasters(1).tValid := '0';
@@ -93,27 +95,37 @@ begin
          ----------------------------------------------------------------------
          when IDLE_S =>
             -- Reset the timer
-            v.timer       := (others => '0');
+            v.timer := (others => '0');
+
             -- Pre-set the counter
-            v.wordCnt     := x"0001";
+            v.wordCnt := x"0001";
+
             -- Save the configuration values
             v.batchSize   := batchSize;
             v.timerConfig := timerConfig;
+
             -- Advance the output pipeline
-            if (v.mDataMasters(0).tValid = '0') and (r.mDataMasters(1).tValid = '1') then
-               v.mDataMasters(0) := r.mDataMasters(1);
+            if (r.mDataMasters(1).tValid = '1') and (v.mDataMasters(0).tValid = '0') then
+               -- Push the cached value into the output
+               v.mDataMasters(1).tvalid := '0';
+               v.mDataMasters(0)        := r.mDataMasters(1);
             end if;
+
             -- Check if ready to move data
             if (sDataMaster.tValid = '1') and (v.mDataMasters(1).tValid = '0') then
+
                -- Accept the data
-               v.sDataSlave.tready      := '1';
+               v.sDataSlave.tready := '1';
+
                -- Move the data
                v.mDataMasters(1).tValid := '1';
                v.mDataMasters(1).tData  := sDataMaster.tData;
                v.mDataMasters(1).tLast  := '0';
                v.mDataMasters(1).tUser  := (others => '0');
+
                -- Set Start of Frame (SOF) flag
-               ssiSetUserSof(AXIS_CONFIG_G, v.mDataMasters(1), '1');
+               v.mDataMasters(1).tUser(SSI_SOF_C) := '1';  -- SOF  
+
                -- Check for min. batch size
                if (batchSize = 0) then
                   -- Set the End of Frame (EOF) flag
@@ -122,6 +134,7 @@ begin
                   -- Next state
                   v.state := MOVE_S;
                end if;
+
             end if;
          ----------------------------------------------------------------------
          when MOVE_S =>
@@ -129,42 +142,55 @@ begin
             if (r.timer /= r.timerConfig) then
                v.timer := r.timer + 1;
             end if;
+
             -- Keep the caches copy
             v.mDataMasters(1).tvalid := r.mDataMasters(1).tvalid;
-            -- Check if ready to move data
-            if (sDataMaster.tValid = '1') and (v.mDataMasters(0).tValid = '0') then
-               -- Accept the data 
-               v.sDataSlave.tready      := '1';
-               -- Advance the pipeline
-               v.mDataMasters(1).tValid := '1';
-               v.mDataMasters(1).tData  := sDataMaster.tData;
-               v.mDataMasters(1).tUser  := (others => '0');
-               v.mDataMasters(0)        := r.mDataMasters(1);
-               -- Increment the word counter
-               v.wordCnt                := r.wordCnt + 1;
-               -- Check for last transfer
-               if (r.wordCnt = r.batchSize) or (r.timer = r.timerConfig) then
-                  -- Set the End of Frame (EOF) flag
-                  v.mDataMasters(1).tLast := '1';
-                  -- Check for timeout
-                  if (r.timer = r.timerConfig) then
-                     -- Set the debug flag
-                     v.timedOut := '1';
-                  end if;
-                  -- Next state
-                  v.state := IDLE_S;
-               end if;
+
             -- Check for timeout
-            elsif (r.timer = r.timerConfig) and (v.mDataMasters(0).tValid = '0') then
+            if (r.timer = r.timerConfig) and (v.mDataMasters(0).tValid = '0') then
+
                -- Set the debug flag
-               v.timedOut               := '1';
+               v.timedOut := '1';
+
                -- Push the cached value into the output
                v.mDataMasters(1).tvalid := '0';
                v.mDataMasters(0)        := r.mDataMasters(1);
+
                -- Set the End of Frame (EOF) flag to the output
-               v.mDataMasters(0).tLast  := '1';
+               v.mDataMasters(0).tLast := '1';
+
                -- Next state
-               v.state                  := IDLE_S;
+               v.state := IDLE_S;
+
+            -- Check if ready to move data
+            elsif (sDataMaster.tValid = '1') and (v.mDataMasters(0).tValid = '0') then
+
+               -- Accept the data 
+               v.sDataSlave.tready := '1';
+
+               -- Move the data
+               v.mDataMasters(1).tValid := '1';
+               v.mDataMasters(1).tData  := sDataMaster.tData;
+               v.mDataMasters(1).tLast  := '0';
+               v.mDataMasters(1).tUser  := (others => '0');
+
+               -- Advance the pipeline
+               v.mDataMasters(0) := r.mDataMasters(1);
+
+               -- Increment the word counter
+               v.wordCnt := r.wordCnt + 1;
+
+               -- Check for last transfer
+               if (r.wordCnt = r.batchSize) then
+
+                  -- Set the End of Frame (EOF) flag
+                  v.mDataMasters(1).tLast := '1';
+
+                  -- Next state
+                  v.state := IDLE_S;
+
+               end if;
+
             end if;
       ----------------------------------------------------------------------
       end case;
