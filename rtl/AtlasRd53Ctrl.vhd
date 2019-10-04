@@ -33,6 +33,11 @@ entity AtlasRd53Ctrl is
       dataDrop        : in  sl;
       configDrop      : in  sl;
       chBond          : in  sl;
+      wrdSent         : in  sl;
+      singleHdrDet    : in  sl;
+      doubleHdrDet    : in  sl;
+      singleHitDet    : in  sl;
+      doubleHitDet    : in  sl;
       linkUp          : in  slv(3 downto 0);
       enable          : out slv(3 downto 0);
       selectRate      : out slv(1 downto 0);
@@ -55,7 +60,7 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant STATUS_SIZE_C  : positive := 7;
+   constant STATUS_SIZE_C  : positive := 12;
    constant STATUS_WIDTH_C : positive := 16;
 
    type RegType is record
@@ -261,6 +266,11 @@ begin
          WIDTH_G        => STATUS_SIZE_C)
       port map (
          -- Input Status bit Signals (wrClk domain)
+         statusIn(11)         => doubleHitDet,
+         statusIn(10)         => singleHitDet,
+         statusIn(9)          => doubleHdrDet,
+         statusIn(8)          => singleHdrDet,
+         statusIn(7)          => wrdSent,
          statusIn(6)          => dataDrop,
          statusIn(5)          => configDrop,
          statusIn(4)          => chBond,

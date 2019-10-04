@@ -20,6 +20,7 @@ use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
+use work.SsiPkg.all;
 
 entity AuroraRxChannel is
    generic (
@@ -40,6 +41,11 @@ entity AuroraRxChannel is
       selectRate   : in  slv(1 downto 0);
       linkUp       : out slv(3 downto 0);
       chBond       : out sl;
+      wrdSent      : out sl;
+      singleHdrDet : out sl;
+      doubleHdrDet : out sl;
+      singleHitDet : out sl;
+      doubleHitDet : out sl;
       rxPhyXbar    : in  Slv2Array(3 downto 0);
       debugStream  : in  sl;
       -- AutoReg and Read back Interface
@@ -55,32 +61,40 @@ architecture rtl of AuroraRxChannel is
       MOVE_S);
 
    type RegType is record
-      idleDet     : sl;
-      autoDet     : sl;
-      readBackDet : sl;
-      errorDet    : sl;
-      fifoRst     : slv(3 downto 0);
-      enable      : slv(3 downto 0);
-      aligned     : slv(3 downto 0);
-      chBond      : sl;
-      rdEn        : slv(3 downto 0);
-      cnt         : natural range 0 to 3;
-      dataMaster  : AxiStreamMasterType;
-      state       : StateType;
+      singleHdrDet : sl;
+      doubleHdrDet : sl;
+      singleHitDet : sl;
+      doubleHitDet : sl;
+      idleDet      : sl;
+      autoDet      : sl;
+      readBackDet  : sl;
+      errorDet     : sl;
+      fifoRst      : slv(3 downto 0);
+      enable       : slv(3 downto 0);
+      aligned      : slv(3 downto 0);
+      chBond       : sl;
+      rdEn         : slv(3 downto 0);
+      cnt          : natural range 0 to 3;
+      dataMaster   : AxiStreamMasterType;
+      state        : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      idleDet     => '0',
-      autoDet     => '0',
-      readBackDet => '0',
-      errorDet    => '0',
-      fifoRst     => (others => '1'),
-      enable      => (others => '0'),
-      aligned     => (others => '0'),
-      chBond      => '0',
-      rdEn        => (others => '0'),
-      cnt         => 0,
-      dataMaster  => AXI_STREAM_MASTER_INIT_C,
-      state       => INIT_S);
+      singleHdrDet => '0',
+      doubleHdrDet => '0',
+      singleHitDet => '0',
+      doubleHitDet => '0',
+      idleDet      => '0',
+      autoDet      => '0',
+      readBackDet  => '0',
+      errorDet     => '0',
+      fifoRst      => (others => '1'),
+      enable       => (others => '0'),
+      aligned      => (others => '0'),
+      chBond       => '0',
+      rdEn         => (others => '0'),
+      cnt          => 0,
+      dataMaster   => AXI_STREAM_MASTER_INIT_C,
+      state        => INIT_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -199,6 +213,9 @@ begin
       variable v      : RegType;
       variable i      : natural;
       variable phyRdy : sl;
+      variable hdrCnt : natural range 0 to 2;
+      variable hitCnt : natural range 0 to 2;
+      variable word   : slv(31 downto 0);
    begin
       -- Latch the current value
       v := r;
@@ -210,6 +227,14 @@ begin
       v.autoDet           := '0';
       v.readBackDet       := '0';
       v.errorDet          := '0';
+      v.singleHdrDet      := '0';
+      v.doubleHdrDet      := '0';
+      v.singleHitDet      := '0';
+      v.doubleHitDet      := '0';
+
+      -- Create 8-frame packets before the batcher
+      v.dataMaster.tUser(SSI_SOF_C) := '1';  -- SOF   
+      v.dataMaster.tLast            := '1';  -- EOF
 
       -- Shirt Register
       v.fifoRst := r.fifoRst(2 downto 0) & '0';
@@ -276,8 +301,6 @@ begin
                elsif (header(r.cnt) = "10") then
 
                   -- Check for data in service header
-                  --if (data(r.cnt)(63 downto 32) = x"1E04_0000") then 
-				  -- RD53a manual is wrong
                   if (data(r.cnt)(63 downto 48) = x"1E04") then
                      -- Move the data
                      v.dataMaster.tValid              := r.enable(r.cnt);
@@ -287,26 +310,26 @@ begin
                   -- Check for both register fields are of type AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"B4") then
                      -- Set the simulation debug flags
-                     v.autoDet                       := r.enable(r.cnt);
-                     v.readBackDet                   := '0';
+                     v.autoDet     := r.enable(r.cnt);
+                     v.readBackDet := '0';
 
                   -- Check for first frame is AutoRead, second is from a read register command
                   elsif (data(r.cnt)(63 downto 56) = x"55") then
                      -- Set the simulation debug flags
-                     v.autoDet                       := r.enable(r.cnt);
-                     v.readBackDet                   := r.enable(r.cnt);
+                     v.autoDet     := r.enable(r.cnt);
+                     v.readBackDet := r.enable(r.cnt);
 
                   -- Check for first is from a read register command, second frame is AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"99") then
                      -- Set the simulation debug flags
-                     v.autoDet                       := r.enable(r.cnt);
-                     v.readBackDet                   := r.enable(r.cnt);
+                     v.autoDet     := r.enable(r.cnt);
+                     v.readBackDet := r.enable(r.cnt);
 
                   -- Check for both register fields are from read register commands
                   elsif (data(r.cnt)(63 downto 56) = x"D2") then
                      -- Set the simulation debug flags
-                     v.autoDet                       := '0';
-                     v.readBackDet                   := r.enable(r.cnt);
+                     v.autoDet     := '0';
+                     v.readBackDet := r.enable(r.cnt);
 
                   -- Check for both register fields are from read register commands
                   elsif (data(r.cnt)(63 downto 56) = x"CC") then
@@ -360,6 +383,39 @@ begin
          end if;
       end if;
 
+      -- Check if word sent
+      if (r.dataMaster.tValid = '1') then
+         -- Reset the counters
+         hdrCnt := 0;
+         hitCnt := 0;
+         -- Loop through the words
+         for i in 1 downto 0 loop
+            word := r.dataMaster.tData(32*i+31 downto 32*i);
+            -- Check for valid word
+            if (word /= x"FFFF_FFFF") then
+               -- Check if event header
+               if (word(31 downto 25) = "0000001") then
+                  hdrCnt := hdrCnt + 1;
+               -- Check hit data
+               else
+                  hitCnt := hitCnt + 1;
+               end if;
+            end if;
+         end loop;
+         if hdrCnt = 1 then
+            v.singleHdrDet := '1';
+         end if;
+         if hdrCnt = 2 then
+            v.doubleHdrDet := '1';
+         end if;
+         if hitCnt = 1 then
+            v.singleHitDet := '1';
+         end if;
+         if hitCnt = 2 then
+            v.doubleHitDet := '1';
+         end if;
+      end if;
+
       -- Combinatorial Outputs
       rdEn <= v.rdEn;
 
@@ -372,10 +428,15 @@ begin
       rin <= v;
 
       -- Registered Outputs
-      dataMaster <= r.dataMaster;
-      linkUp     <= rxLinkUp;
-      chBond     <= r.chBond;
-      fifoRst    <= r.fifoRst(0);
+      dataMaster   <= r.dataMaster;
+      fifoRst      <= r.fifoRst(0);
+      linkUp       <= rxLinkUp;
+      chBond       <= r.chBond;
+      wrdSent      <= r.dataMaster.tValid;
+      singleHdrDet <= r.singleHdrDet;
+      doubleHdrDet <= r.doubleHdrDet;
+      singleHitDet <= r.singleHitDet;
+      doubleHitDet <= r.doubleHitDet;
 
    end process comb;
 

@@ -73,6 +73,11 @@ architecture mapping of AuroraRxLane is
    signal header : slv(1 downto 0);
    signal data   : slv(63 downto 0);
 
+   attribute dont_touch                : string;
+   attribute dont_touch of phyRxValid  : signal is "TRUE";
+   attribute dont_touch of phyRxHeader : signal is "TRUE";
+   attribute dont_touch of phyRxData   : signal is "TRUE";
+
 begin
 
    U_rst160MHz : entity work.RstPipeline
@@ -163,24 +168,27 @@ begin
    ------------------------------------------------------------
    -- "RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same
    ------------------------------------------------------------
-   process(phyRxDataVec, phyRxHeaderVec, phyRxValidVec, selectRate)
+   process(clk160MHz)
    begin
-      if (selectRate = "00") then
-         phyRxValid  <= phyRxValidVec(0);
-         phyRxHeader <= phyRxHeaderVec(0);
-         phyRxData   <= phyRxDataVec(0);
-      elsif (selectRate = "01") then
-         phyRxValid  <= phyRxValidVec(1);
-         phyRxHeader <= phyRxHeaderVec(1);
-         phyRxData   <= phyRxDataVec(1);
-      elsif (selectRate = "10") then
-         phyRxValid  <= phyRxValidVec(2);
-         phyRxHeader <= phyRxHeaderVec(2);
-         phyRxData   <= phyRxDataVec(2);
-      else
-         phyRxValid  <= phyRxValidVec(3);
-         phyRxHeader <= phyRxHeaderVec(3);
-         phyRxData   <= phyRxDataVec(3);
+      if rising_edge(clk160MHz) then
+         phyRxValid <= '0' after TPD_G;
+         if (selectRate = "00") and (phyRxValidVec(0) = '1') then
+            phyRxValid  <= '1'               after TPD_G;
+            phyRxHeader <= phyRxHeaderVec(0) after TPD_G;
+            phyRxData   <= phyRxDataVec(0)   after TPD_G;
+         elsif (selectRate = "01") and (phyRxValidVec(1) = '1') then
+            phyRxValid  <= '1'               after TPD_G;
+            phyRxHeader <= phyRxHeaderVec(1) after TPD_G;
+            phyRxData   <= phyRxDataVec(1)   after TPD_G;
+         elsif (selectRate = "10") and (phyRxValidVec(2) = '1') then
+            phyRxValid  <= '1'               after TPD_G;
+            phyRxHeader <= phyRxHeaderVec(2) after TPD_G;
+            phyRxData   <= phyRxDataVec(2)   after TPD_G;
+         elsif (selectRate = "11") and (phyRxValidVec(3) = '1') then
+            phyRxValid  <= '1'               after TPD_G;
+            phyRxHeader <= phyRxHeaderVec(3) after TPD_G;
+            phyRxData   <= phyRxDataVec(3)   after TPD_G;
+         end if;
       end if;
    end process;
 

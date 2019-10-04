@@ -19,11 +19,13 @@ class Ctrl(pr.Device):
             **kwargs):
         super().__init__(name=name, description=description, **kwargs) 
 
+        statusCntBitSize = 16
+
         self.addRemoteVariables(   
             name         = 'LinkUpCnt',
             description  = 'Status counter for link up',
             offset       = 0x000,
-            bitSize      = 16,
+            bitSize      = statusCntBitSize,
             mode         = 'RO',
             number       = 4,
             stride       = 4,
@@ -34,7 +36,7 @@ class Ctrl(pr.Device):
             name         = 'ChBondCnt',
             description  = 'Status counter for channel bonding',
             offset       = 0x010,
-            bitSize      = 16,
+            bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
         ))        
@@ -43,7 +45,7 @@ class Ctrl(pr.Device):
             name         = 'ConfigDropCnt',
             description  = 'Increments when config dropped due to back pressure',
             offset       = 0x014,
-            bitSize      = 16,
+            bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
         ))   
@@ -52,9 +54,77 @@ class Ctrl(pr.Device):
             name         = 'DataDropCnt',
             description  = 'Increments when data dropped due to back pressure',
             offset       = 0x018,
-            bitSize      = 16,
+            bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
+        ))  
+
+        self.add(pr.RemoteVariable(
+            name         = 'SingleHdrDetCnt',
+            description  = 'Increments when 64-bit word sent to SW has only 1 event header detected',
+            offset       = 0x020,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'DoubleHdrDetCnt',
+            description  = 'Increments when 64-bit word sent to SW has only 2 event header detected',
+            offset       = 0x024,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        )) 
+
+        self.add(pr.RemoteVariable(
+            name         = 'SingleHitDetCnt',
+            description  = 'Increments when 64-bit word sent to SW has only 1 hit data detected',
+            offset       = 0x028,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'DoubleHitDetCnt',
+            description  = 'Increments when 64-bit word sent to SW has only 2 hit data detected',
+            offset       = 0x02C,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))         
+        
+        self.add(pr.RemoteVariable(
+            name         = 'WrdSentCnt',
+            description  = 'Increments when 64-bit word sent to SW',
+            offset       = 0x01C,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))  
+
+        self.add(pr.LinkVariable(
+            name         = 'TotalHdrDetCnt', 
+            description  = 'Increments when 64-bit word sent to SW has event header detected',
+            mode         = 'RO', 
+            dependencies = [self.SingleHdrDetCnt,self.DoubleHdrDetCnt],
+            linkedGet    = lambda: self.SingleHdrDetCnt.value() + 2*self.DoubleHdrDetCnt.value(),
+            value        = 0,
+        ))   
+
+        self.add(pr.LinkVariable(
+            name         = 'TotalHitDetCnt', 
+            description  = 'Increments when 64-bit word sent to SW has hit data detected',
+            mode         = 'RO', 
+            dependencies = [self.SingleHitDetCnt,self.DoubleHitDetCnt],
+            linkedGet    = lambda: self.SingleHitDetCnt.value() + 2*self.DoubleHitDetCnt.value(),
+            value        = 0,
         ))           
         
         self.add(pr.RemoteVariable(

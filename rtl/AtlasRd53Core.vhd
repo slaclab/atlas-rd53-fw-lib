@@ -87,19 +87,23 @@ architecture mapping of AtlasRd53Core is
    signal batcherMaster : AxiStreamMasterType;
    signal batcherSlave  : AxiStreamSlaveType;
 
-   signal autoReadReg : Slv32Array(3 downto 0);
-   signal enable      : slv(3 downto 0);
-   signal linkUp      : slv(3 downto 0);
-   signal selectRate  : slv(1 downto 0);
-   signal rxPhyXbar   : Slv2Array(3 downto 0);
-   signal chBond      : sl;
-   signal debugStream : sl;
-   signal invData     : slv(3 downto 0);
-   signal invCmd      : sl;
-   signal dlyCmd      : sl;
-   signal batchSize   : slv(15 downto 0);
-   signal timerConfig : slv(15 downto 0);
-
+   signal autoReadReg  : Slv32Array(3 downto 0);
+   signal enable       : slv(3 downto 0);
+   signal linkUp       : slv(3 downto 0);
+   signal selectRate   : slv(1 downto 0);
+   signal rxPhyXbar    : Slv2Array(3 downto 0);
+   signal chBond       : sl;
+   signal debugStream  : sl;
+   signal invData      : slv(3 downto 0);
+   signal invCmd       : sl;
+   signal dlyCmd       : sl;
+   signal batchSize    : slv(15 downto 0);
+   signal timerConfig  : slv(15 downto 0);
+   signal wrdSent      : sl;
+   signal singleHdrDet : sl;
+   signal doubleHdrDet : sl;
+   signal singleHitDet : sl;
+   signal doubleHitDet : sl;
 begin
 
    -------------------------
@@ -117,6 +121,11 @@ begin
          dataDrop        => dataCtrl.overflow,
          configDrop      => configCtrl.overflow,
          chBond          => chBond,
+         wrdSent         => wrdSent,
+         singleHdrDet    => singleHdrDet,
+         doubleHdrDet    => doubleHdrDet,
+         singleHitDet    => singleHitDet,
+         doubleHitDet    => doubleHitDet,
          linkUp          => linkUp,
          enable          => enable,
          selectRate      => selectRate,
@@ -185,6 +194,11 @@ begin
          invData      => invData,
          linkUp       => linkUp,
          chBond       => chBond,
+         wrdSent      => wrdSent,
+         singleHdrDet => singleHdrDet,
+         doubleHdrDet => doubleHdrDet,
+         singleHitDet => singleHitDet,
+         doubleHitDet => doubleHitDet,
          rxPhyXbar    => rxPhyXbar,
          debugStream  => debugStream,
          -- AutoReg and Read back Interface
@@ -269,6 +283,9 @@ begin
          sDataSlave  => txDataSlave,
          mDataMaster => batcherMaster,
          mDataSlave  => batcherSlave);
+
+   -- batcherMaster <= txDataMaster;
+   -- txDataSlave   <= batcherSlave;
 
    --------------------
    -- Resize/Burst FIFO
