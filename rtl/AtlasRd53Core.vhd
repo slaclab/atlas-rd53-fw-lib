@@ -90,6 +90,7 @@ architecture mapping of AtlasRd53Core is
    signal autoReadReg  : Slv32Array(3 downto 0);
    signal enable       : slv(3 downto 0);
    signal linkUp       : slv(3 downto 0);
+   signal hdrErrDet    : slv(3 downto 0);
    signal selectRate   : slv(1 downto 0);
    signal rxPhyXbar    : Slv2Array(3 downto 0);
    signal chBond       : sl;
@@ -127,6 +128,7 @@ begin
          singleHitDet    => singleHitDet,
          doubleHitDet    => doubleHitDet,
          linkUp          => linkUp,
+         hdrErrDet       => hdrErrDet,
          enable          => enable,
          selectRate      => selectRate,
          invData         => invData,
@@ -185,6 +187,7 @@ begin
          -- Deserialization Interface
          serDesData   => serDesData,
          dlySlip      => dlySlip,
+         hdrErrDet    => hdrErrDet,
          -- Timing Interface
          clk160MHz    => clk160MHz,
          rst160MHz    => rst160MHz,

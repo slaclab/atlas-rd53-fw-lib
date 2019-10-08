@@ -32,6 +32,7 @@ entity AuroraRxChannel is
       -- Deserialization Interface
       serDesData   : in  Slv8Array(3 downto 0);
       dlySlip      : out slv(3 downto 0);
+      hdrErrDet    : out slv(3 downto 0);
       -- Timing Interface
       clk160MHz    : in  sl;
       rst160MHz    : in  sl;
@@ -141,6 +142,7 @@ begin
             -- RD53 ASIC Serial Interface
             serDesData => serDesData(i),
             dlySlip    => dlySlip(i),
+            hdrErrDet  => hdrErrDet(i),
             polarity   => invData(i),
             selectRate => selectRate,
             -- Timing Interface

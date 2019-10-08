@@ -127,6 +127,17 @@ class Ctrl(pr.Device):
             value        = 0,
         ))           
         
+        self.addRemoteVariables(   
+            name         = 'AuroraHdrErrDet',
+            description  = 'Increments when the Aurora 2-bit header is not 10 or 01',
+            offset       = 0x030,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            number       = 4,
+            stride       = 4,
+            pollInterval = pollInterval,
+        )            
+                
         self.add(pr.RemoteVariable(
             name         = 'LinkUp',
             description  = 'link up',

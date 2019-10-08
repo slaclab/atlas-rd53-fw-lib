@@ -38,6 +38,7 @@ entity AtlasRd53Ctrl is
       doubleHdrDet    : in  sl;
       singleHitDet    : in  sl;
       doubleHitDet    : in  sl;
+      hdrErrDet       : in  slv(3 downto 0);
       linkUp          : in  slv(3 downto 0);
       enable          : out slv(3 downto 0);
       selectRate      : out slv(1 downto 0);
@@ -60,7 +61,7 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant STATUS_SIZE_C  : positive := 12;
+   constant STATUS_SIZE_C  : positive := 16;
    constant STATUS_WIDTH_C : positive := 16;
 
    type RegType is record
@@ -266,23 +267,24 @@ begin
          WIDTH_G        => STATUS_SIZE_C)
       port map (
          -- Input Status bit Signals (wrClk domain)
-         statusIn(11)         => doubleHitDet,
-         statusIn(10)         => singleHitDet,
-         statusIn(9)          => doubleHdrDet,
-         statusIn(8)          => singleHdrDet,
-         statusIn(7)          => wrdSent,
-         statusIn(6)          => dataDrop,
-         statusIn(5)          => configDrop,
-         statusIn(4)          => chBond,
-         statusIn(3 downto 0) => linkUp,
+         statusIn(15 downto 12) => hdrErrDet,
+         statusIn(11)           => doubleHitDet,
+         statusIn(10)           => singleHitDet,
+         statusIn(9)            => doubleHdrDet,
+         statusIn(8)            => singleHdrDet,
+         statusIn(7)            => wrdSent,
+         statusIn(6)            => dataDrop,
+         statusIn(5)            => configDrop,
+         statusIn(4)            => chBond,
+         statusIn(3 downto 0)   => linkUp,
          -- Output Status bit Signals (rdClk domain)  
-         statusOut            => statusOut,
+         statusOut              => statusOut,
          -- Status Bit Counters Signals (rdClk domain) 
-         cntRstIn             => r.cntRst,
-         rollOverEnIn         => r.rollOverEn,
-         cntOut               => statusCnt,
+         cntRstIn               => r.cntRst,
+         rollOverEnIn           => r.rollOverEn,
+         cntOut                 => statusCnt,
          -- Clocks and Reset Ports
-         wrClk                => clk160MHz,
-         rdClk                => axilClk);
+         wrClk                  => clk160MHz,
+         rdClk                  => axilClk);
 
 end rtl;

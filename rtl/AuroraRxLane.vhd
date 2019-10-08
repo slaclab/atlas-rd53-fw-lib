@@ -31,6 +31,7 @@ entity AuroraRxLane is
       -- RD53 ASIC Serial Interface
       serDesData : in  slv(7 downto 0);
       dlySlip    : out sl;
+      hdrErrDet  : out sl;
       polarity   : in  sl;
       selectRate : in  slv(1 downto 0);
       -- Timing Interface
@@ -204,6 +205,7 @@ begin
          rst           => reset160MHz,
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
+         hdrErrDet     => hdrErrDet,
          bitSlip       => bitslip,
          dlySlip       => dlySlip,
          locked        => gearboxAligned);
