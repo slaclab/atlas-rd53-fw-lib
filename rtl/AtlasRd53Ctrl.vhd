@@ -188,13 +188,13 @@ begin
       end if;
    end process seq;
 
-   U_localRst : entity work.RstPipeline
+   U_localRst : entity work.RstSync
       generic map (
          TPD_G => TPD_G)
       port map (
-         clk    => clk160MHz,
-         rstIn  => r.localRst,
-         rstOut => localRst);
+         clk      => clk160MHz,
+         asyncRst => r.localRst,
+         syncRst  => localRst);
 
    U_enable : entity work.SynchronizerVector
       generic map (
