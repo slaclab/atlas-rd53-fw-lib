@@ -258,9 +258,20 @@ class Ctrl(pr.Device):
             description  = 'FPGA Internal PLL reset',
             offset       = 0xFF4,
             bitSize      = 1,
-            function     = lambda cmd: cmd.post(1),
+            bitOffset    = 0,
+            function     = lambda cmd: cmd.toggle(),
             hidden       = False,
-        ))         
+        ))
+
+        self.add(pr.RemoteCommand(
+            name         = 'LocalRst',
+            description  = 'Local 160MHz Reset',
+            offset       = 0xFF4,
+            bitSize      = 1,
+            bitOffset    = 1,
+            function     = lambda cmd: cmd.toggle(),
+            # hidden       = False,
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'RollOverEn', 

@@ -105,7 +105,22 @@ architecture mapping of AtlasRd53Core is
    signal doubleHdrDet : sl;
    signal singleHitDet : sl;
    signal doubleHitDet : sl;
+
+   signal localRst    : sl;
+   signal localReset  : sl;
+   signal reset160MHz : sl;
+
 begin
+
+   localReset <= localRst or rst160MHz;
+
+   U_Rst : entity work.RstPipeline
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk    => clk160MHz,
+         rstIn  => localReset,
+         rstOut => reset160MHz);
 
    -------------------------
    -- Control/Monitor Module
@@ -117,7 +132,7 @@ begin
       port map (
          -- Monitoring Interface (clk160MHz domain)
          clk160MHz       => clk160MHz,
-         rst160MHz       => rst160MHz,
+         rst160MHz       => reset160MHz,
          autoReadReg     => autoReadReg,
          dataDrop        => dataCtrl.overflow,
          configDrop      => configCtrl.overflow,
@@ -137,6 +152,7 @@ begin
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
          pllRst          => pllRst,
+         localRst        => localRst,
          batchSize       => batchSize,
          timerConfig     => timerConfig,
          -- AXI-Lite Interface (axilClk domain)
@@ -167,7 +183,7 @@ begin
          sConfigSlave    => sConfigSlave,
          -- Timing Interface
          clk160MHz       => clk160MHz,
-         rst160MHz       => rst160MHz,
+         rst160MHz       => reset160MHz,
          -- Command Serial Interface (clk160MHz domain)
          invCmd          => invCmd,
          dlyCmd          => dlyCmd,
@@ -190,7 +206,7 @@ begin
          hdrErrDet    => hdrErrDet,
          -- Timing Interface
          clk160MHz    => clk160MHz,
-         rst160MHz    => rst160MHz,
+         rst160MHz    => reset160MHz,
          -- Status/Control Interface
          enable       => enable,
          selectRate   => selectRate,
@@ -229,7 +245,7 @@ begin
       port map (
          -- Slave Port
          sAxisClk    => clk160MHz,
-         sAxisRst    => rst160MHz,
+         sAxisRst    => reset160MHz,
          sAxisMaster => configMaster,
          sAxisCtrl   => configCtrl,
          -- Master Port
@@ -258,7 +274,7 @@ begin
       port map (
          -- Slave Port
          sAxisClk    => clk160MHz,
-         sAxisRst    => rst160MHz,
+         sAxisRst    => reset160MHz,
          sAxisMaster => dataMaster,
          sAxisCtrl   => dataCtrl,
          -- Master Port

@@ -48,6 +48,7 @@ entity AtlasRd53Ctrl is
       rxPhyXbar       : out Slv2Array(3 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
+      localRst        : out sl;
       batchSize       : out slv(15 downto 0);
       timerConfig     : out slv(15 downto 0);
       -- AXI-Lite Interface (axilClk domain)
@@ -68,6 +69,7 @@ architecture rtl of AtlasRd53Ctrl is
       batchSize      : slv(15 downto 0);
       timerConfig    : slv(15 downto 0);
       pllRst         : sl;
+      localRst       : sl;
       debugStream    : sl;
       rxPhyXbar      : Slv2Array(3 downto 0);
       selectRate     : slv(1 downto 0);
@@ -85,6 +87,7 @@ architecture rtl of AtlasRd53Ctrl is
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
+      localRst       => '0',
       debugStream    => '1',
       rxPhyXbar      => RX_MAPPING_G,
       selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
@@ -153,6 +156,8 @@ begin
       axiSlaveRegister (axilEp, x"FF0", 16, v.timerConfig);
 
       axiSlaveRegister (axilEp, x"FF4", 0, v.pllRst);
+      axiSlaveRegister (axilEp, x"FF4", 1, v.localRst);
+
       axiSlaveRegister (axilEp, x"FF8", 0, v.rollOverEn);
       axiSlaveRegister (axilEp, x"FFC", 0, v.cntRst);
 
@@ -182,6 +187,14 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
+
+   U_localRst : entity work.RstPipeline
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk    => clk160MHz,
+         rstIn  => r.localRst,
+         rstOut => localRst);
 
    U_enable : entity work.SynchronizerVector
       generic map (
