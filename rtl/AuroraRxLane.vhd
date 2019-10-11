@@ -30,7 +30,7 @@ entity AuroraRxLane is
    port (
       -- RD53 ASIC Serial Interface
       serDesData : in  slv(7 downto 0);
-      dlySlip    : out sl;
+      dlyCfg     : out slv(8 downto 0);
       hdrErrDet  : out sl;
       polarity   : in  sl;
       selectRate : in  slv(1 downto 0);
@@ -207,7 +207,7 @@ begin
          rxHeaderValid => phyRxValid,
          hdrErrDet     => hdrErrDet,
          bitSlip       => bitslip,
-         dlySlip       => dlySlip,
+         dlyCfg        => dlyCfg,
          locked        => gearboxAligned);
 
    ---------------------------------

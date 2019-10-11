@@ -35,7 +35,7 @@ entity AuroraRxGearboxAligner is
       rxHeaderValid : in  sl;
       hdrErrDet     : out sl;
       bitSlip       : out sl;
-      dlySlip       : out sl;
+      dlyCfg        : out slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
@@ -58,7 +58,7 @@ architecture rtl of AuroraRxGearboxAligner is
       badCount    : natural range 0 to BAD_COUNT_C;
       hdrErrDet   : sl;
       bitSlip     : sl;
-      dlySlip     : sl;
+      dlyCfg      : slv(8 downto 0);
       locked      : sl;
       state       : StateType;
    end record RegType;
@@ -70,7 +70,7 @@ architecture rtl of AuroraRxGearboxAligner is
       badCount    => 0,
       hdrErrDet   => '0',
       bitSlip     => '0',
-      dlySlip     => '0',
+      dlyCfg      => (others => '0'),
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -87,7 +87,6 @@ begin
 
       -- Reset strobes
       v.bitSlip   := '0';
-      v.dlySlip   := '0';
       v.hdrErrDet := '0';
 
       -- State Machine
@@ -109,8 +108,8 @@ begin
                      -- Reset the counter
                      v.slipCnt := 0;
 
-                     -- Set the flag
-                     v.dlySlip := '1';
+                     -- Increment the counter
+                     v.dlyCfg := r.dlyCfg + 1;
 
                   else
                      -- Increment the counter
@@ -175,8 +174,8 @@ begin
                   -- Reset the counter
                   v.slipCnt := 0;
 
-                  -- Set the flag
-                  v.dlySlip := '1';
+                  -- Increment the counter
+                  v.dlyCfg := r.dlyCfg + 1;
 
                else
                   -- Increment the counter
@@ -208,7 +207,7 @@ begin
       -- Outputs 
       locked    <= r.locked;
       bitSlip   <= r.bitSlip;
-      dlySlip   <= r.dlySlip;
+      dlyCfg    <= r.dlyCfg;
       hdrErrDet <= r.hdrErrDet;
 
       -- Reset
