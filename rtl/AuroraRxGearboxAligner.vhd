@@ -33,18 +33,16 @@ entity AuroraRxGearboxAligner is
       rst           : in  sl;
       rxHeader      : in  slv(1 downto 0);
       rxHeaderValid : in  sl;
-      hdrErrDet     : out sl;
-      bitSlip       : out sl;
-      dlyCfg        : out slv(8 downto 0);
+      slip          : out sl;
+      dlyConfig     : out slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
    constant SLIP_CNT_C   : positive := 66;
-   constant SLIP_WAIT_C  : positive := 256;
-   constant GOOD_COUNT_C : integer  := 1024;
-   constant BAD_COUNT_C  : integer  := 2;
+   constant SLIP_WAIT_C  : positive := 100;
+   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
 
    type StateType is (
       UNLOCKED_S,
@@ -52,25 +50,21 @@ architecture rtl of AuroraRxGearboxAligner is
       LOCKED_S);
 
    type RegType is record
-      slipCnt     : natural range 0 to SLIP_CNT_C;
-      slipWaitCnt : natural range 0 to SLIP_WAIT_C;
-      goodCount   : natural range 0 to GOOD_COUNT_C;
-      badCount    : natural range 0 to BAD_COUNT_C;
-      hdrErrDet   : sl;
-      bitSlip     : sl;
-      dlyCfg      : slv(8 downto 0);
+      dlyConfig   : slv(8 downto 0);
+      slipCnt     : natural range 0 to SLIP_CNT_C-1;
+      slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
+      goodCnt     : natural range 0 to LOCKED_CNT_C-1;
+      slip        : sl;
       locked      : sl;
       state       : StateType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
+      dlyConfig   => (others => '0'),
       slipCnt     => 0,
       slipWaitCnt => 0,
-      goodCount   => 0,
-      badCount    => 0,
-      hdrErrDet   => '0',
-      bitSlip     => '0',
-      dlyCfg      => (others => '0'),
+      goodCnt     => 0,
+      slip        => '0',
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -86,8 +80,7 @@ begin
       v := r;
 
       -- Reset strobes
-      v.bitSlip   := '0';
-      v.hdrErrDet := '0';
+      v.slip := '0';
 
       -- State Machine
       case r.state is
@@ -95,26 +88,23 @@ begin
          when UNLOCKED_S =>
             -- Check for data
             if (rxHeaderValid = '1') then
-
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
 
                   -- Set the flag
-                  v.bitSlip := '1';
+                  v.slip := '1';
 
                   -- Check the slip counter
                   if (r.slipCnt = SLIP_CNT_C-1) then
-
                      -- Reset the counter
-                     v.slipCnt := 0;
-
+                     v.slipCnt   := 0;
                      -- Increment the counter
-                     v.dlyCfg := r.dlyCfg + 1;
-
+                     v.dlyConfig := r.dlyConfig + 1;
                   else
                      -- Increment the counter
                      v.slipCnt := r.slipCnt + 1;
                   end if;
+
 
                   -- Next state
                   v.state := SLIP_WAIT_S;
@@ -140,75 +130,30 @@ begin
          when LOCKED_S =>
             -- Check for data
             if (rxHeaderValid = '1') then
-
-               -- Increment the counter
-               v.goodCount := r.goodCount + 1;
-
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
-                  -- Check for not roll over
-                  if (r.badCount /= BAD_COUNT_C) then
-                     -- Increment the counter
-                     v.badCount := r.badCount + 1;
-                  end if;
-               end if;
-
-            end if;
-
-            -- Check the bad counter
-            if (r.badCount = BAD_COUNT_C) then
-
-               -- Reset the counter
-               v.goodCount := 0;
-               v.badCount  := 0;
-
-               -- Reset the flag
-               v.locked := '0';
-
-               -- Set the flag
-               v.bitSlip := '1';
-
-               -- Check the slip counter
-               if (r.slipCnt = SLIP_CNT_C-1) then
-
+                  -- Reset the flag
+                  v.locked  := '0';
                   -- Reset the counter
-                  v.slipCnt := 0;
-
+                  v.goodCnt := 0;
+                  -- Next state
+                  v.state   := UNLOCKED_S;
+               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
                   -- Increment the counter
-                  v.dlyCfg := r.dlyCfg + 1;
-
+                  v.goodCnt := r.goodCnt + 1;
                else
-                  -- Increment the counter
-                  v.slipCnt := r.slipCnt + 1;
+                  -- Set the flag
+                  v.locked := '1';
                end if;
-
-               -- Next state
-               v.state := SLIP_WAIT_S;
-
-            -- Check the counter
-            elsif (r.goodCount = GOOD_COUNT_C-1) then
-
-               -- Reset the counter
-               v.goodCount := 0;
-               v.badCount  := 0;
-
-               -- Set the flag
-               v.locked := '1';
-
             end if;
       ----------------------------------------------------------------------
       end case;
 
-      -- Check for bad header
-      if (rxHeaderValid = '1') and ((rxHeader = "00") or (rxHeader = "11")) then
-         v.hdrErrDet := '1';
-      end if;
 
       -- Outputs 
       locked    <= r.locked;
-      bitSlip   <= r.bitSlip;
-      dlyCfg    <= r.dlyCfg;
-      hdrErrDet <= r.hdrErrDet;
+      slip      <= r.slip;
+      dlyConfig <= r.dlyConfig;
 
       -- Reset
       if (rst = '1') then
@@ -227,4 +172,4 @@ begin
       end if;
    end process seq;
 
-end rtl;
+end architecture rtl;
