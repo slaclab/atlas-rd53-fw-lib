@@ -59,22 +59,18 @@ module CERN_IO_PAD (
    assign pullup_en_b = ~( PEN & \UD* ) ;
    assign pulldown_en = ~( ~PEN | \UD* ) ;
 
-//   wire Internal ;
+   wire Internal ;
 
-//   bufif0 (weak0, weak1) (Internal, 1'b1, pullup_en_b) ; 
-//   bufif1 (weak0, weak1) (Internal, 1'b0, pulldown_en) ;
+   bufif0 (weak0, weak1) (Internal, 1'b1, pullup_en_b) ; 
+   bufif1 (weak0, weak1) (Internal, 1'b0, pulldown_en) ;
 
-//   rtran (Internal, IO) ;    // resistive bidirectional path between IO and Internal (SF_1V2_CDM)
+   rtran (Internal, IO) ;    // resistive bidirectional path between IO and Internal (SF_1V2_CDM)
 
-//   buf (Z, Internal) ;
-//   //buf #(1.038, 1.241) (Z, Internal) ;   // 1.038 ns tpLH and 1.241 tpHL delays from SPICE simulation (TT, 30 fF internal load capacitance)
-
-
-   bufif0 (weak0, weak1) (IO, 1'b1, pullup_en_b) ; 
-   bufif1 (weak0, weak1) (IO, 1'b0, pulldown_en) ;
-
-   buf (Z, IO) ;
+   buf (Z, Internal) ;
    //buf #(1.038, 1.241) (Z, Internal) ;   // 1.038 ns tpLH and 1.241 tpHL delays from SPICE simulation (TT, 30 fF internal load capacitance)
+
+
+
 
 
    //--------------------   core pin (A) => PAD   --------------------//
@@ -128,9 +124,9 @@ module SF_1V2_FULL_LOCAL (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran (IO, IO);
-   // `endif
+   `ifndef ABSTRACT
+      tran (IO, IO);
+   `endif
 
 endmodule
 `endcelldefine
@@ -151,9 +147,9 @@ module SF_1V2_CDM (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran (Internal, IO);
-   // `endif
+   `ifndef ABSTRACT
+      tran (Internal, IO);
+   `endif
 
 endmodule
 `endcelldefine
@@ -171,9 +167,9 @@ module SF_1V2_POWER_CLAMP_CORE_SUPPLY (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran(VSS, VSSPST) ;
-   // `endif
+   `ifndef ABSTRACT
+      tran(VSS, VSSPST) ;
+   `endif
 
 endmodule
 `endcelldefine
@@ -192,9 +188,9 @@ module SF_1V2_POWER_CLAMP_CORE_GROUND (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran(VSS, VSSPST) ;
-   // `endif
+   `ifndef ABSTRACT
+      tran(VSS, VSSPST) ;
+   `endif
 
 endmodule
 `endcelldefine
@@ -212,9 +208,9 @@ module SF_1V2_POWER_CLAMP_IO_SUPPLY (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran(VSS, VSSPST) ;
-   // `endif
+   `ifndef ABSTRACT
+      tran(VSS, VSSPST) ;
+   `endif
 
 endmodule
 `endcelldefine
@@ -231,9 +227,9 @@ module SF_1V2_POWER_CLAMP_IO_GROUND (
 
    ) ;
 
-   // `ifndef ABSTRACT
-      // tran(VSS, VSSPST) ;
-   // `endif
+   `ifndef ABSTRACT
+      tran(VSS, VSSPST) ;
+   `endif
 
 endmodule
 `endcelldefine

@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps 
 `include "array/interfaces/RD53_AFE_BGPV_inf.sv"
 
 `ifndef  RD53_AFE_BGPV__SV
@@ -50,8 +49,8 @@ module RD53_AFE_BGPV(
 	);
     
     // **NOTE - module time unit in seconds! (use SI units for all calculations) --- check that does not make troubles.
-	//timeunit 1s;
-	//timeprecision 100ps;
+	timeunit 1s;
+	timeprecision 100ps;
 
 // synopsys translate_off
 
