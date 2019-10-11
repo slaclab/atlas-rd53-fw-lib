@@ -35,6 +35,7 @@ entity AuroraRxGearboxAligner is
       rxHeaderValid : in  sl;
       bitSlip       : out sl;
       hdrErrDet     : out sl;
+      dlyLoad       : out sl;
       dlyCfg        : out slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
@@ -51,6 +52,7 @@ architecture rtl of AuroraRxGearboxAligner is
       LOCKED_S);
 
    type RegType is record
+      dlyLoad     : sl;
       dlyConfig   : slv(8 downto 0);
       slipCnt     : natural range 0 to SLIP_CNT_C-1;
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
@@ -62,6 +64,7 @@ architecture rtl of AuroraRxGearboxAligner is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
+      dlyLoad     => '0',
       dlyConfig   => (others => '0'),
       slipCnt     => 0,
       slipWaitCnt => 0,
@@ -84,7 +87,8 @@ begin
 
       -- Reset strobes
       v.slip      := '0';
-      v.hdrErrDet := '0';      
+      v.dlyLoad   := '0';
+      v.hdrErrDet := '0';
 
       -- State Machine
       case r.state is
@@ -104,6 +108,8 @@ begin
                      v.slipCnt   := 0;
                      -- Increment the counter
                      v.dlyConfig := r.dlyConfig + 1;
+                     -- Set the flag
+                     v.dlyLoad   := '1';
                   else
                      -- Increment the counter
                      v.slipCnt := r.slipCnt + 1;
@@ -161,8 +167,9 @@ begin
       -- Outputs 
       locked    <= r.locked;
       bitSlip   <= r.slip;
+      dlyLoad   <= r.dlyLoad;
       dlyCfg    <= r.dlyConfig;
-      hdrErrDet <= r.hdrErrDet;      
+      hdrErrDet <= r.hdrErrDet;
 
       -- Reset
       if (rst = '1') then

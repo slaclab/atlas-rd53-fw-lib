@@ -2,7 +2,7 @@
 -- File       : AuroraRxChannel.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Wrapper for AuroraRxLaneDeser
+-- Description: Wrapper for AuroraRxLaneDeser (Modeled after XAPP1315's rx_sipo_1to7.v)
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -39,6 +39,7 @@ entity AuroraRxLaneDeser is
       clk160MHz     : in  sl;
       rst160MHz     : in  sl;
       -- Delay Configuration
+      dlyLoad       : in  sl;
       dlyCfg        : in  slv(8 downto 0);
       -- Output
       dataOut       : out slv(7 downto 0));
@@ -46,10 +47,9 @@ end AuroraRxLaneDeser;
 
 architecture mapping of AuroraRxLaneDeser is
 
-   signal dPortData : sl;
-   signal dataDly   : sl;
-   signal empty     : sl;
-   signal rdEn      : sl;
+   signal dPortData  : sl;
+   signal dataDly    : sl;
+   signal clk640MHzL : sl;
 
    attribute IODELAY_GROUP            : string;
    attribute IODELAY_GROUP of U_DELAY : label is IODELAY_GROUP_G;
@@ -68,6 +68,7 @@ begin
          SIM_DEVICE       => XIL_DEVICE_G,
          DELAY_VALUE      => 0,
          REFCLK_FREQUENCY => REF_FREQ_G,
+         UPDATE_MODE      => "ASYNC",
          CASCADE          => "NONE",
          DELAY_SRC        => "IDATAIN",
          DELAY_TYPE       => "VAR_LOAD")
@@ -79,7 +80,7 @@ begin
          RST         => rst160MHz,
          CE          => '0',
          INC         => '0',
-         LOAD        => '1',
+         LOAD        => dlyLoad,
          EN_VTC      => '0',
          CASC_IN     => '0',
          CASC_RETURN => '0',
@@ -87,24 +88,21 @@ begin
 
    U_ISERDES : ISERDESE3
       generic map (
-         DATA_WIDTH        => 8,
-         FIFO_ENABLE       => "TRUE",
-         FIFO_SYNC_MODE    => "FALSE",
-         IS_CLK_B_INVERTED => '1',
-         IS_CLK_INVERTED   => '0',
-         IS_RST_INVERTED   => '0',
-         SIM_DEVICE        => XIL_DEVICE_G)
+         DATA_WIDTH     => 8,
+         FIFO_ENABLE    => "FALSE",
+         FIFO_SYNC_MODE => "FALSE",
+         SIM_DEVICE     => XIL_DEVICE_G)
       port map (
          D           => dataDly,
          Q           => dataOut,
          CLK         => clk640MHz,
-         CLK_B       => clk640MHz,
+         CLK_B       => clk640MHzL,
          CLKDIV      => clk160MHz,
          RST         => rst160MHz,
-         FIFO_RD_CLK => clk160MHz,
-         FIFO_RD_EN  => rdEn,
-         FIFO_EMPTY  => empty);
+         FIFO_RD_CLK => '0',
+         FIFO_RD_EN  => '0',
+         FIFO_EMPTY  => open);
 
-   rdEn <= not(empty);
+   clk640MHzL <= not(clk640MHz);
 
 end mapping;

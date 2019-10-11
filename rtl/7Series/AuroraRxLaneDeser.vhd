@@ -39,6 +39,7 @@ entity AuroraRxLaneDeser is
       clk160MHz     : in  sl;
       rst160MHz     : in  sl;
       -- Delay Configuration
+      dlyLoad       : in  sl;
       dlyCfg        : in  slv(8 downto 0);
       -- Output
       dataOut       : out slv(7 downto 0));
@@ -75,7 +76,7 @@ begin
          C          => clk160MHz,
          CE         => '0',
          INC        => '0',
-         LD         => '1',
+         LD         => dlyLoad,
          LDPIPEEN   => '0',
          REGRST     => '0',
          CINVCTRL   => '0',
