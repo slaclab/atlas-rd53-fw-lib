@@ -52,7 +52,7 @@ architecture rtl of AuroraRxGearboxAligner is
       LOCKED_S);
 
    type RegType is record
-      dlyLoad     : sl;
+      dlyLoad     : slv(1 downto 0);
       dlyConfig   : slv(8 downto 0);
       slipCnt     : natural range 0 to SLIP_CNT_C-1;
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
@@ -64,7 +64,7 @@ architecture rtl of AuroraRxGearboxAligner is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      dlyLoad     => '0',
+      dlyLoad     => (others => '0'),
       dlyConfig   => (others => '0'),
       slipCnt     => 0,
       slipWaitCnt => 0,
@@ -87,8 +87,10 @@ begin
 
       -- Reset strobes
       v.slip      := '0';
-      v.dlyLoad   := '0';
       v.hdrErrDet := '0';
+
+      -- Shift register
+      v.dlyLoad := '0' & r.dlyLoad(1);
 
       -- State Machine
       case r.state is
@@ -105,16 +107,15 @@ begin
                   -- Check the slip counter
                   if (r.slipCnt = SLIP_CNT_C-1) then
                      -- Reset the counter
-                     v.slipCnt   := 0;
+                     v.slipCnt    := 0;
                      -- Increment the counter
-                     v.dlyConfig := r.dlyConfig + 1;
+                     v.dlyConfig  := r.dlyConfig + 1;
                      -- Set the flag
-                     v.dlyLoad   := '1';
+                     v.dlyLoad(1) := '1';
                   else
                      -- Increment the counter
                      v.slipCnt := r.slipCnt + 1;
                   end if;
-
 
                   -- Next state
                   v.state := SLIP_WAIT_S;
@@ -167,7 +168,7 @@ begin
       -- Outputs 
       locked    <= r.locked;
       bitSlip   <= r.slip;
-      dlyLoad   <= r.dlyLoad;
+      dlyLoad   <= r.dlyLoad(0);
       dlyCfg    <= r.dlyConfig;
       hdrErrDet <= r.hdrErrDet;
 
