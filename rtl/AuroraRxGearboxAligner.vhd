@@ -34,6 +34,7 @@ entity AuroraRxGearboxAligner is
       rxHeader      : in  slv(1 downto 0);
       rxHeaderValid : in  sl;
       slip          : out sl;
+      hdrErrDet     : out sl;
       dlyConfig     : out slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
@@ -55,6 +56,7 @@ architecture rtl of AuroraRxGearboxAligner is
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
       goodCnt     : natural range 0 to LOCKED_CNT_C-1;
       slip        : sl;
+      hdrErrDet   : sl;
       locked      : sl;
       state       : StateType;
    end record RegType;
@@ -65,6 +67,7 @@ architecture rtl of AuroraRxGearboxAligner is
       slipWaitCnt => 0,
       goodCnt     => 0,
       slip        => '0',
+      hdrErrDet   => '0',
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -80,7 +83,8 @@ begin
       v := r;
 
       -- Reset strobes
-      v.slip := '0';
+      v.slip      := '0';
+      v.hdrErrDet := '0';      
 
       -- State Machine
       case r.state is
@@ -149,11 +153,16 @@ begin
       ----------------------------------------------------------------------
       end case;
 
+      -- Check for bad header
+      if (rxHeaderValid = '1') and ((rxHeader = "00") or (rxHeader = "11")) then
+         v.hdrErrDet := '1';
+      end if;
 
       -- Outputs 
       locked    <= r.locked;
-      slip      <= r.slip;
+      bitSlip   <= r.slip;
       dlyConfig <= r.dlyConfig;
+      hdrErrDet <= r.hdrErrDet;      
 
       -- Reset
       if (rst = '1') then
