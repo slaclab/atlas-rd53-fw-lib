@@ -35,7 +35,7 @@ entity AuroraRxGearboxAligner is
       rxHeaderValid : in  sl;
       bitSlip       : out sl;
       hdrErrDet     : out sl;
-      dlyConfig     : out slv(8 downto 0);
+      dlyCfg        : out slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
@@ -161,7 +161,7 @@ begin
       -- Outputs 
       locked    <= r.locked;
       bitSlip   <= r.slip;
-      dlyConfig <= r.dlyConfig;
+      dlyCfg    <= r.dlyConfig;
       hdrErrDet <= r.hdrErrDet;      
 
       -- Reset
