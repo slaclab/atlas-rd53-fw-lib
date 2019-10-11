@@ -34,5 +34,3 @@ if { ${family} eq {kintexu} ||
      ${family} eq {zynquplus} } {
    loadSource -dir "$::DIR_PATH/rtl/UltraScale"
 }
-
-set_property -name {xsim.elaborate.xelab.more_options} -value {-override_timeunit} -objects [get_filesets sim_1]
