@@ -33,7 +33,7 @@ entity AuroraRxGearboxAligner is
       rst           : in  sl;
       rxHeader      : in  slv(1 downto 0);
       rxHeaderValid : in  sl;
-      slip          : out sl;
+      bitSlip       : out sl;
       hdrErrDet     : out sl;
       dlyConfig     : out slv(8 downto 0);
       locked        : out sl);
