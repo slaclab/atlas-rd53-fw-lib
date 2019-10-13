@@ -33,6 +33,9 @@ entity AuroraRxChannel is
       serDesData   : in  Slv8Array(3 downto 0);
       dlyLoad      : out slv(3 downto 0);
       dlyCfg       : out Slv9Array(3 downto 0);
+      enUsrDlyCfg  : in  sl;
+      usrDlyCfg    : in  Slv9Array(3 downto 0);
+      bitSlip      : out slv(3 downto 0);
       hdrErrDet    : out slv(3 downto 0);
       -- Timing Interface
       clk160MHz    : in  sl;
@@ -141,20 +144,23 @@ begin
             SIMULATION_G => SIMULATION_G)
          port map (
             -- RD53 ASIC Serial Interface
-            serDesData => serDesData(i),
-            dlyLoad    => dlyLoad(i),
-            dlyCfg     => dlyCfg(i),
-            hdrErrDet  => hdrErrDet(i),
-            polarity   => invData(i),
-            selectRate => selectRate,
+            serDesData  => serDesData(i),
+            dlyLoad     => dlyLoad(i),
+            dlyCfg      => dlyCfg(i),
+            enUsrDlyCfg => enUsrDlyCfg,
+            usrDlyCfg   => usrDlyCfg(i),
+            bitSlip     => bitSlip(i),
+            hdrErrDet   => hdrErrDet(i),
+            polarity    => invData(i),
+            selectRate  => selectRate,
             -- Timing Interface
-            clk160MHz  => clk160MHz,
-            rst160MHz  => rst160MHz,
+            clk160MHz   => clk160MHz,
+            rst160MHz   => rst160MHz,
             -- Output
-            rxLinkUp   => rxLinkUpOut(i),
-            rxValid    => rxValidOut(i),
-            rxHeader   => rxHeaderOut(i),
-            rxData     => rxDataOut(i));
+            rxLinkUp    => rxLinkUpOut(i),
+            rxValid     => rxValidOut(i),
+            rxHeader    => rxHeaderOut(i),
+            rxData      => rxDataOut(i));
 
       -- Crossbar Switch
       process(clk160MHz)

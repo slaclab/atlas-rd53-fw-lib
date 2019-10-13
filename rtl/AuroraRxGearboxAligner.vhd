@@ -37,12 +37,13 @@ entity AuroraRxGearboxAligner is
       hdrErrDet     : out sl;
       dlyLoad       : out sl;
       dlyCfg        : out slv(8 downto 0);
+      enUsrDlyCfg   : in  sl;
+      usrDlyCfg     : in  slv(8 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
-   constant SLIP_CNT_C   : positive := 66;
    constant SLIP_WAIT_C  : positive := 100;
    constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
 
@@ -52,9 +53,10 @@ architecture rtl of AuroraRxGearboxAligner is
       LOCKED_S);
 
    type RegType is record
+      enUsrDlyCfg : sl;
+      usrDlyCfg   : slv(8 downto 0);
       dlyLoad     : slv(1 downto 0);
       dlyConfig   : slv(8 downto 0);
-      slipCnt     : natural range 0 to SLIP_CNT_C-1;
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
       goodCnt     : natural range 0 to LOCKED_CNT_C-1;
       slip        : sl;
@@ -64,9 +66,10 @@ architecture rtl of AuroraRxGearboxAligner is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
+      enUsrDlyCfg => '0',
+      usrDlyCfg   => (others => '0'),
       dlyLoad     => (others => '0'),
       dlyConfig   => (others => '0'),
-      slipCnt     => 0,
       slipWaitCnt => 0,
       goodCnt     => 0,
       slip        => '0',
@@ -79,8 +82,33 @@ architecture rtl of AuroraRxGearboxAligner is
 
 begin
 
-   comb : process (r, rst, rxHeader, rxHeaderValid) is
+   comb : process (enUsrDlyCfg, r, rst, rxHeader, rxHeaderValid, usrDlyCfg) is
       variable v : RegType;
+
+      procedure slipProcedure is
+      begin
+
+         -- Update and Increment the RX IDELAY configuration
+         v.dlyLoad(1) := '1';
+         v.dlyConfig  := r.dlyConfig + 1;
+
+         -- Check for roll over of delay configuration
+         if (v.dlyConfig = 0) then
+            -- Slip by 1-bit in the gearbox
+            v.slip := '1';
+         end if;
+
+         -- Reset the flag
+         v.locked := '0';
+
+         -- Reset the counter
+         v.goodCnt := 0;
+
+         -- Next state
+         v.state := SLIP_WAIT_S;
+
+      end procedure slipProcedure;
+
    begin
       -- Latch the current value
       v := r;
@@ -100,26 +128,8 @@ begin
             if (rxHeaderValid = '1') then
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
-
-                  -- Set the flag
-                  v.slip := '1';
-
-                  -- Check the slip counter
-                  if (r.slipCnt = SLIP_CNT_C-1) then
-                     -- Reset the counter
-                     v.slipCnt    := 0;
-                     -- Increment the counter
-                     v.dlyConfig  := r.dlyConfig + 1;
-                     -- Set the flag
-                     v.dlyLoad(1) := '1';
-                  else
-                     -- Increment the counter
-                     v.slipCnt := r.slipCnt + 1;
-                  end if;
-
-                  -- Next state
-                  v.state := SLIP_WAIT_S;
-
+                  -- Execute the slip procedure
+                  slipProcedure;
                else
                   -- Next state
                   v.state := LOCKED_S;
@@ -143,12 +153,8 @@ begin
             if (rxHeaderValid = '1') then
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
-                  -- Reset the flag
-                  v.locked  := '0';
-                  -- Reset the counter
-                  v.goodCnt := 0;
-                  -- Next state
-                  v.state   := UNLOCKED_S;
+                  -- Execute the slip procedure
+                  slipProcedure;
                elsif (r.goodCnt /= LOCKED_CNT_C-1) then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
@@ -165,12 +171,30 @@ begin
          v.hdrErrDet := '1';
       end if;
 
+      -- Keep a delayed copy
+      v.enUsrDlyCfg := enUsrDlyCfg;
+      v.usrDlyCfg   := usrDlyCfg;
+
+      -- Check for changes in enUsrDlyCfg values or usrDlyCfg values
+      if (r.enUsrDlyCfg /= v.enUsrDlyCfg) or (r.usrDlyCfg /= v.usrDlyCfg) then
+         -- Update the RX IDELAY configuration
+         v.dlyLoad(1) := '1';
+      end if;
+
       -- Outputs 
       locked    <= r.locked;
       bitSlip   <= r.slip;
       dlyLoad   <= r.dlyLoad(0);
-      dlyCfg    <= r.dlyConfig;
       hdrErrDet <= r.hdrErrDet;
+
+      -- Check if using user delay configuration
+      if (enUsrDlyCfg = '1') then
+         -- Force to user configuration
+         dlyCfg <= usrDlyCfg;
+      else
+         -- Else use the automatic value
+         dlyCfg <= r.dlyConfig;
+      end if;
 
       -- Reset
       if (rst = '1') then
@@ -189,4 +213,4 @@ begin
       end if;
    end process seq;
 
-end architecture rtl;
+end rtl;

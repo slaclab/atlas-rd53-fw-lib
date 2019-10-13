@@ -92,6 +92,7 @@ architecture mapping of AtlasRd53Core is
    signal enable       : slv(3 downto 0);
    signal linkUp       : slv(3 downto 0);
    signal hdrErrDet    : slv(3 downto 0);
+   signal bitSlip      : slv(3 downto 0);
    signal selectRate   : slv(1 downto 0);
    signal rxPhyXbar    : Slv2Array(3 downto 0);
    signal chBond       : sl;
@@ -111,7 +112,13 @@ architecture mapping of AtlasRd53Core is
    signal localReset  : sl;
    signal reset160MHz : sl;
 
+   signal dlyConfig   : Slv9Array(3 downto 0);
+   signal enUsrDlyCfg : sl;
+   signal usrDlyCfg   : Slv9Array(3 downto 0);
+
 begin
+
+   dlyCfg <= dlyConfig;
 
    localReset <= localRst or rst160MHz;
 
@@ -143,8 +150,10 @@ begin
          doubleHdrDet    => doubleHdrDet,
          singleHitDet    => singleHitDet,
          doubleHitDet    => doubleHitDet,
+         dlyCfg          => dlyConfig,
          linkUp          => linkUp,
          hdrErrDet       => hdrErrDet,
+         bitSlip         => bitSlip,
          enable          => enable,
          selectRate      => selectRate,
          invData         => invData,
@@ -152,6 +161,8 @@ begin
          dlyCmd          => dlyCmd,
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
+         enUsrDlyCfg     => enUsrDlyCfg,
+         usrDlyCfg       => usrDlyCfg,
          pllRst          => pllRst,
          localRst        => localRst,
          batchSize       => batchSize,
@@ -204,7 +215,10 @@ begin
          -- Deserialization Interface
          serDesData   => serDesData,
          dlyLoad      => dlyLoad,
-         dlyCfg       => dlyCfg,
+         dlyCfg       => dlyConfig,
+         enUsrDlyCfg  => enUsrDlyCfg,
+         usrDlyCfg    => usrDlyCfg,
+         bitSlip      => bitSlip,
          hdrErrDet    => hdrErrDet,
          -- Timing Interface
          clk160MHz    => clk160MHz,

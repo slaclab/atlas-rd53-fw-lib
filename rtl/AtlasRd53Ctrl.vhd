@@ -38,7 +38,9 @@ entity AtlasRd53Ctrl is
       doubleHdrDet    : in  sl;
       singleHitDet    : in  sl;
       doubleHitDet    : in  sl;
+      dlyCfg          : in  Slv9Array(3 downto 0);
       hdrErrDet       : in  slv(3 downto 0);
+      bitSlip         : in  slv(3 downto 0);
       linkUp          : in  slv(3 downto 0);
       enable          : out slv(3 downto 0);
       selectRate      : out slv(1 downto 0);
@@ -46,6 +48,8 @@ entity AtlasRd53Ctrl is
       invCmd          : out sl;
       dlyCmd          : out sl;
       rxPhyXbar       : out Slv2Array(3 downto 0);
+      enUsrDlyCfg     : out sl;
+      usrDlyCfg       : out Slv9Array(3 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
       localRst        : out sl;
@@ -62,10 +66,12 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant STATUS_SIZE_C  : positive := 16;
+   constant STATUS_SIZE_C  : positive := 20;
    constant STATUS_WIDTH_C : positive := 16;
 
    type RegType is record
+      enUsrDlyCfg    : sl;
+      usrDlyCfg      : Slv9Array(3 downto 0);
       batchSize      : slv(15 downto 0);
       timerConfig    : slv(15 downto 0);
       pllRst         : sl;
@@ -84,6 +90,8 @@ architecture rtl of AtlasRd53Ctrl is
    end record;
 
    constant REG_INIT_C : RegType := (
+      enUsrDlyCfg    => '0',
+      usrDlyCfg      => (others => (others => '0')),
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
@@ -106,16 +114,18 @@ architecture rtl of AtlasRd53Ctrl is
 
    signal autoReadRegSync : Slv32Array(3 downto 0);
 
+   signal dlyConfig : Slv9Array(3 downto 0);
+
    signal statusOut : slv(STATUS_SIZE_C-1 downto 0);
    signal statusCnt : SlVectorArray(STATUS_SIZE_C-1 downto 0, STATUS_WIDTH_C-1 downto 0);
 
-   -- attribute dont_touch               : string;
-   -- attribute dont_touch of r          : signal is "TRUE";
+   -- attribute dont_touch      : string;
+   -- attribute dont_touch of r : signal is "TRUE";
 
 begin
 
    comb : process (autoReadRegSync, axilReadMaster, axilRst, axilWriteMaster,
-                   r, statusCnt, statusOut) is
+                   dlyConfig, r, statusCnt, statusOut) is
       variable v      : RegType;
       variable axilEp : AxiLiteEndPointType;
    begin
@@ -139,6 +149,11 @@ begin
       axiSlaveRegisterR(axilEp, x"418", 0, autoReadRegSync(2));
       axiSlaveRegisterR(axilEp, x"41C", 0, autoReadRegSync(3));
 
+      axiSlaveRegisterR(axilEp, x"420", 0, dlyConfig(0));
+      axiSlaveRegisterR(axilEp, x"424", 0, dlyConfig(1));
+      axiSlaveRegisterR(axilEp, x"428", 0, dlyConfig(2));
+      axiSlaveRegisterR(axilEp, x"42C", 0, dlyConfig(3));
+
       axiSlaveRegister (axilEp, x"800", 0, v.enable);
       axiSlaveRegister (axilEp, x"804", 0, v.invData);
       axiSlaveRegister (axilEp, x"808", 0, v.invCmd);
@@ -151,6 +166,12 @@ begin
       axiSlaveRegister (axilEp, x"80C", 8, v.selectRate);
 
       axiSlaveRegister (axilEp, x"810", 0, v.debugStream);
+      axiSlaveRegister (axilEp, x"814", 0, v.enUsrDlyCfg);
+
+      axiSlaveRegister (axilEp, x"820", 0, v.usrDlyCfg(0));
+      axiSlaveRegister (axilEp, x"824", 0, v.usrDlyCfg(1));
+      axiSlaveRegister (axilEp, x"828", 0, v.usrDlyCfg(2));
+      axiSlaveRegister (axilEp, x"82C", 0, v.usrDlyCfg(3));
 
       axiSlaveRegister (axilEp, x"FF0", 0, v.batchSize);
       axiSlaveRegister (axilEp, x"FF0", 16, v.timerConfig);
@@ -247,7 +268,25 @@ begin
          dataIn  => r.debugStream,
          dataOut => debugStream);
 
+   U_enUsrDlyCfg : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.enUsrDlyCfg,
+         dataOut => enUsrDlyCfg);
+
    GEN_VEC : for i in 3 downto 0 generate
+
+      U_usrDlyCfg : entity work.SynchronizerFifo
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 9)
+         port map (
+            wr_clk => axilClk,
+            din    => r.usrDlyCfg(i),
+            rd_clk => clk160MHz,
+            dout   => usrDlyCfg(i));
 
       U_rxPhyXbar : entity work.SynchronizerVector
          generic map (
@@ -268,6 +307,16 @@ begin
             rd_clk => axilClk,
             dout   => autoReadRegSync(i));
 
+      U_dlyCfg : entity work.SynchronizerFifo
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 9)
+         port map (
+            wr_clk => clk160MHz,
+            din    => dlyCfg(i),
+            rd_clk => axilClk,
+            dout   => dlyConfig(i));
+
    end generate GEN_VEC;
 
    U_SyncStatusVector : entity work.SyncStatusVector
@@ -280,6 +329,7 @@ begin
          WIDTH_G        => STATUS_SIZE_C)
       port map (
          -- Input Status bit Signals (wrClk domain)
+         statusIn(19 downto 16) => bitSlip,
          statusIn(15 downto 12) => hdrErrDet,
          statusIn(11)           => doubleHitDet,
          statusIn(10)           => singleHitDet,

@@ -29,20 +29,23 @@ entity AuroraRxLane is
       SIMULATION_G : boolean := false);
    port (
       -- RD53 ASIC Serial Interface
-      serDesData : in  slv(7 downto 0);
-      dlyLoad    : out sl;
-      dlyCfg     : out slv(8 downto 0);
-      hdrErrDet  : out sl;
-      polarity   : in  sl;
-      selectRate : in  slv(1 downto 0);
+      serDesData  : in  slv(7 downto 0);
+      dlyLoad     : out sl;
+      dlyCfg      : out slv(8 downto 0);
+      enUsrDlyCfg : in  sl;
+      usrDlyCfg   : in  slv(8 downto 0);
+      hdrErrDet   : out sl;
+      bitSlip     : out sl;
+      polarity    : in  sl;
+      selectRate  : in  slv(1 downto 0);
       -- Timing Interface
-      clk160MHz  : in  sl;
-      rst160MHz  : in  sl;
+      clk160MHz   : in  sl;
+      rst160MHz   : in  sl;
       -- Output
-      rxLinkUp   : out sl;
-      rxValid    : out sl;
-      rxHeader   : out slv(1 downto 0);
-      rxData     : out slv(63 downto 0));
+      rxLinkUp    : out sl;
+      rxValid     : out sl;
+      rxHeader    : out slv(1 downto 0);
+      rxData      : out slv(63 downto 0));
 end AuroraRxLane;
 
 architecture mapping of AuroraRxLane is
@@ -63,7 +66,7 @@ architecture mapping of AuroraRxLane is
    signal phyRxHeader : slv(1 downto 0);
    signal phyRxData   : slv(63 downto 0);
 
-   signal bitSlip          : sl;
+   signal slip             : sl;
    signal unscramblerValid : sl;
    signal gearboxAligned   : sl;
 
@@ -81,6 +84,8 @@ architecture mapping of AuroraRxLane is
    attribute dont_touch of phyRxData   : signal is "TRUE";
 
 begin
+
+   bitSlip <= slip;
 
    U_rst160MHz : entity work.RstPipeline
       generic map (
@@ -107,7 +112,7 @@ begin
       port map (
          clk                     => clk160MHz,
          rst                     => reset160MHz,
-         slip                    => bitslip,
+         slip                    => slip,
          slaveData(7 downto 0)   => serDesDataMask,
          slaveValid              => '1',
          masterData(1 downto 0)  => phyRxHeaderVec(0),
@@ -123,7 +128,7 @@ begin
       port map (
          clk                     => clk160MHz,
          rst                     => reset160MHz,
-         slip                    => bitslip,
+         slip                    => slip,
          slaveData(0)            => serDesDataMask(0),
          slaveData(1)            => serDesDataMask(2),
          slaveData(2)            => serDesDataMask(4),
@@ -142,7 +147,7 @@ begin
       port map (
          clk                     => clk160MHz,
          rst                     => reset160MHz,
-         slip                    => bitslip,
+         slip                    => slip,
          slaveData(0)            => serDesDataMask(0),
          slaveData(1)            => serDesDataMask(4),
          slaveValid              => '1',
@@ -159,7 +164,7 @@ begin
       port map (
          clk                     => clk160MHz,
          rst                     => reset160MHz,
-         slip                    => bitslip,
+         slip                    => slip,
          slaveData(0)            => serDesDataMask(0),
          slaveValid              => '1',
          masterData(1 downto 0)  => phyRxHeaderVec(3),
@@ -207,9 +212,11 @@ begin
          rxHeader      => phyRxHeader,
          rxHeaderValid => phyRxValid,
          hdrErrDet     => hdrErrDet,
-         bitSlip       => bitslip,
+         bitSlip       => slip,
          dlyLoad       => dlyLoad,
          dlyCfg        => dlyCfg,
+         enUsrDlyCfg   => enUsrDlyCfg,
+         usrDlyCfg     => usrDlyCfg,
          locked        => gearboxAligned);
 
    ---------------------------------

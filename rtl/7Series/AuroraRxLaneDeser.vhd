@@ -80,7 +80,7 @@ begin
          LDPIPEEN   => '0',
          REGRST     => '0',
          CINVCTRL   => '0',
-         CNTVALUEIN => dlyCfg(4 downto 0));
+         CNTVALUEIN => dlyCfg(8 downto 4));
 
    U_ISERDES : ISERDESE2
       generic map (

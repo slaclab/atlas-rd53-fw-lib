@@ -136,7 +136,18 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )            
+        )   
+
+        self.addRemoteVariables(   
+            name         = 'GearBoxBitSlipCnt',
+            description  = 'Increments whenever there is a gearbox bit slip executed',
+            offset       = 0x040,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            number       = 4,
+            stride       = 4,
+            pollInterval = pollInterval,
+        )           
                 
         self.add(pr.RemoteVariable(
             name         = 'LinkUp',
@@ -167,7 +178,18 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )          
+        )     
+
+        self.addRemoteVariables(   
+            name         = 'RxDelayTap',
+            description  = 'RX IDELAY tap configuration (Note: For 7-series FPGAs the 5-bit config is mapped like dlyCfg(8 downto 4) to the most significant bits)',
+            offset       = 0x420,
+            bitSize      = 9,
+            mode         = 'RO',
+            number       = 4,
+            stride       = 4,
+            pollInterval = pollInterval,
+        )             
         
         self.add(pr.RemoteVariable(
             name         = 'EnLane', 
@@ -229,8 +251,26 @@ class Ctrl(pr.Device):
             offset       = 0x810,
             bitSize      = 1, 
             mode         = 'RW',
-        ))         
+        ))   
 
+        self.add(pr.RemoteVariable(
+            name         = 'EnUsrDlyCfg', 
+            description  = 'Enables the User to override the automatic RX IDELAY tap configuration (Note: For 7-series FPGAs the 5-bit config is mapped like dlyCfg(8 downto 4) to the most significant bits)',
+            offset       = 0x814,
+            bitSize      = 1, 
+            mode         = 'RW',
+        ))           
+        
+        self.addRemoteVariables(   
+            name         = 'UserRxDelayTap',
+            description  = 'Sets the RX IDELAY tap configuration (A.K.A. RxDelayTap) when EnUsrDlyCfg = 0x1',
+            offset       = 0x820,
+            bitSize      = 9,
+            mode         = 'RW',
+            number       = 4,
+            stride       = 4,
+        )   
+        
         self.add(pr.RemoteVariable(
             name         = 'BatchSize', 
             description  = 'Number of 64-bit (8 bytes) words to batch together into a AXIS frame',
