@@ -44,7 +44,7 @@ end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
-   constant SLIP_WAIT_C  : positive := 100;
+   constant SLIP_WAIT_C  : positive := ite(SIMULATION_G, 10, 100);
    constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
 
    type StateType is (
