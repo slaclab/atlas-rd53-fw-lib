@@ -43,12 +43,13 @@ end entity AuroraRxGearboxAligner;
 architecture rtl of AuroraRxGearboxAligner is
 
    constant SLIP_WAIT_C  : positive := ite(SIMULATION_G, 10, 100);
-   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
+   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 1000);
 
    type StateType is (
       UNLOCKED_S,
       SLIP_WAIT_S,
       LOCKING_S,
+      EYE_SCAN_S,
       LOCKED_S);
 
    type RegType is record
@@ -62,6 +63,7 @@ architecture rtl of AuroraRxGearboxAligner is
       slip        : sl;
       hdrErrDet   : sl;
       armed       : sl;
+      scanDone    : sl;
       locked      : sl;
       state       : StateType;
    end record RegType;
@@ -77,6 +79,7 @@ architecture rtl of AuroraRxGearboxAligner is
       slip        => '0',
       hdrErrDet   => '0',
       armed       => '0',
+      scanDone    => '0',
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -86,27 +89,17 @@ architecture rtl of AuroraRxGearboxAligner is
 begin
 
    comb : process (enUsrDlyCfg, r, rst, rxHeader, rxHeaderValid, slideDlyCfg,
-                   slideDlyDir, usrDlyCfg) is
+                   usrDlyCfg) is
       variable v : RegType;
 
       procedure slipProcedure is
-         variable delayConfig : slv(8 downto 0);
       begin
-
-         -- Select the source of delay
-         if (r.armed = '1') then
-            -- Use the cached value before the slide
-            delayConfig := r.dlyCache;
-         else
-            -- Use the registered value
-            delayConfig := r.dlyConfig;
-         end if;
 
          -- Update the Delay module
          v.dlyLoad(1) := '1';
 
          -- Check for max value
-         if (delayConfig = (511-63)) then
+         if (r.dlyConfig >= (511-63)) then
 
             -- Set min. value
             v.dlyConfig := toSlv(64, 9);
@@ -116,12 +109,13 @@ begin
 
          else
             -- Increment the counter
-            v.dlyConfig := delayConfig + 1;
+            v.dlyConfig := r.dlyConfig + 1;
          end if;
 
          -- Reset the flags
-         v.armed  := '0';
-         v.locked := '0';
+         v.armed    := '0';
+         v.scanDone := '0';
+         v.locked   := '0';
 
          -- Reset the counter
          v.goodCnt := 0;
@@ -142,6 +136,11 @@ begin
       -- Shift register
       v.dlyLoad := '0' & r.dlyLoad(1);
 
+      -- Check for bad header
+      if (rxHeaderValid = '1') and ((rxHeader = "00") or (rxHeader = "11")) then
+         v.hdrErrDet := '1';
+      end if;
+
       -- State Machine
       case r.state is
          ----------------------------------------------------------------------
@@ -149,7 +148,7 @@ begin
             -- Check for data
             if (rxHeaderValid = '1') then
                -- Check for bad header
-               if (rxHeader = "00" or rxHeader = "11") then
+               if (v.hdrErrDet = '1') then
                   -- Execute the slip procedure
                   slipProcedure;
                else
@@ -165,10 +164,14 @@ begin
                -- Reset the counter
                v.slipWaitCnt := 0;
 
-               -- Check for armed mode
-               if (r.armed = '1') then
+               -- Check if eye scan completed
+               if (r.scanDone = '1') then
                   -- Next state
                   v.state := LOCKED_S;
+               -- Check for armed mode
+               elsif (r.armed = '1') then
+                  -- Next state
+                  v.state := EYE_SCAN_S;
                else
                   -- Next state
                   v.state := UNLOCKED_S;
@@ -184,7 +187,7 @@ begin
             if (rxHeaderValid = '1') then
 
                -- Check for bad header
-               if (rxHeader = "00" or rxHeader = "11") then
+               if (v.hdrErrDet = '1') then
                   -- Execute the slip procedure
                   slipProcedure;
 
@@ -193,7 +196,7 @@ begin
                   v.goodCnt := r.goodCnt + 1;
                else
 
-                  -- Reset the flag
+                  -- Set the flag
                   v.armed := '1';
 
                   -- Reset the counter
@@ -202,12 +205,46 @@ begin
                   -- Make a cached copy
                   v.dlyCache := r.dlyConfig;
 
-                  -- Check for an addition slide
-                  if (slideDlyDir = '1') then
-                     v.dlyConfig := r.dlyConfig + resize(slideDlyCfg, 9);
-                  -- Else subtraction slide
-                  else
+                  -- Update the Delay module
+                  v.dlyLoad(1) := '1';
+                  v.dlyConfig  := r.dlyConfig + 1;
+
+                  -- Next state
+                  v.state := SLIP_WAIT_S;
+
+               end if;
+            end if;
+         ----------------------------------------------------------------------
+         when EYE_SCAN_S =>
+            -- Check for data
+            if (rxHeaderValid = '1') then
+
+               -- Check for bad header
+               if (v.hdrErrDet = '1') then
+                  -- Execute the slip procedure
+                  slipProcedure;
+
+               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
+                  -- Increment the counter
+                  v.goodCnt := r.goodCnt + 1;
+               else
+
+                  -- Reset the counter
+                  v.goodCnt := 0;
+
+                  -- Update the Delay module
+                  v.dlyLoad(1) := '1';
+                  v.dlyConfig  := r.dlyConfig + 1;
+
+                  -- Check if a 64 count wide eye has been detected
+                  if (r.dlyConfig-r.dlyCache) = 63 then
+
+                     -- Perform the slide
                      v.dlyConfig := r.dlyConfig - resize(slideDlyCfg, 9);
+
+                     -- Set the flag
+                     v.scanDone := '1';
+
                   end if;
 
                   -- Next state
@@ -221,13 +258,9 @@ begin
             if (rxHeaderValid = '1') then
 
                -- Check for bad header
-               if (rxHeader = "00" or rxHeader = "11") then
+               if (v.hdrErrDet = '1') then
                   -- Execute the slip procedure
                   slipProcedure;
-
-               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
-                  -- Increment the counter
-                  v.goodCnt := r.goodCnt + 1;
 
                else
                   -- Set the flag
@@ -238,17 +271,12 @@ begin
       ----------------------------------------------------------------------
       end case;
 
-      -- Check for bad header
-      if (rxHeaderValid = '1') and ((rxHeader = "00") or (rxHeader = "11")) then
-         v.hdrErrDet := '1';
-      end if;
-
       -- Keep a delayed copy
       v.enUsrDlyCfg := enUsrDlyCfg;
       v.usrDlyCfg   := usrDlyCfg;
 
-      -- Check for changes in enUsrDlyCfg values or usrDlyCfg values
-      if (r.enUsrDlyCfg /= v.enUsrDlyCfg) or (r.usrDlyCfg /= v.usrDlyCfg) then
+      -- Check for changes in enUsrDlyCfg values or usrDlyCfg values or dlyConfig value
+      if (r.enUsrDlyCfg /= v.enUsrDlyCfg) or (r.usrDlyCfg /= v.usrDlyCfg) or (r.dlyConfig /= v.dlyConfig) then
          -- Update the RX IDELAY configuration
          v.dlyLoad(1) := '1';
       end if;

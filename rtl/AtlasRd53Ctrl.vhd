@@ -97,7 +97,7 @@ architecture rtl of AtlasRd53Ctrl is
       enUsrDlyCfg    => '0',
       usrDlyCfg      => (others => (others => '0')),
       slideDlyDir    => '0',
-      slideDlyCfg    => (others => '0'),
+      slideDlyCfg    => toSlv(32, 6),
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
