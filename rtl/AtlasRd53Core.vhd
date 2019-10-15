@@ -115,6 +115,8 @@ architecture mapping of AtlasRd53Core is
    signal dlyConfig   : Slv9Array(3 downto 0);
    signal enUsrDlyCfg : sl;
    signal usrDlyCfg   : Slv9Array(3 downto 0);
+   signal slideDlyDir : sl;
+   signal slideDlyCfg : slv(5 downto 0);
 
 begin
 
@@ -163,6 +165,8 @@ begin
          debugStream     => debugStream,
          enUsrDlyCfg     => enUsrDlyCfg,
          usrDlyCfg       => usrDlyCfg,
+         slideDlyDir     => slideDlyDir,
+         slideDlyCfg     => slideDlyCfg,
          pllRst          => pllRst,
          localRst        => localRst,
          batchSize       => batchSize,
@@ -218,6 +222,8 @@ begin
          dlyCfg       => dlyConfig,
          enUsrDlyCfg  => enUsrDlyCfg,
          usrDlyCfg    => usrDlyCfg,
+         slideDlyDir  => slideDlyDir,
+         slideDlyCfg  => slideDlyCfg,
          bitSlip      => bitSlip,
          hdrErrDet    => hdrErrDet,
          -- Timing Interface

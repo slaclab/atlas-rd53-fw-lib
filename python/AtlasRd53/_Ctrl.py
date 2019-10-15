@@ -259,7 +259,25 @@ class Ctrl(pr.Device):
             offset       = 0x814,
             bitSize      = 1, 
             mode         = 'RW',
-        ))           
+        ))  
+
+        self.add(pr.RemoteVariable(
+            name         = 'SlideDlyCfg', 
+            description  = 'Amount of delay to add (or subtract) from the edge of the eye lock',
+            offset       = 0x818,
+            bitSize      = 6, 
+            bitOffset    = 0, 
+            mode         = 'RW',
+        ))  
+
+        self.add(pr.RemoteVariable(
+            name         = 'SlideDlyDir', 
+            description  = '0: subtract SlideDlyCfg for the edge of the eye lock, 0: add SlideDlyCfg for the edge of the eye lock',
+            offset       = 0x818,
+            bitSize      = 1, 
+            bitOffset    = 16, 
+            mode         = 'RW',
+        ))          
         
         self.addRemoteVariables(   
             name         = 'UserRxDelayTap',

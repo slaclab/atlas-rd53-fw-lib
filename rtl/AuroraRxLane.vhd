@@ -34,6 +34,8 @@ entity AuroraRxLane is
       dlyCfg      : out slv(8 downto 0);
       enUsrDlyCfg : in  sl;
       usrDlyCfg   : in  slv(8 downto 0);
+      slideDlyDir : in  sl;
+      slideDlyCfg : in  slv(5 downto 0);
       hdrErrDet   : out sl;
       bitSlip     : out sl;
       polarity    : in  sl;
@@ -217,6 +219,8 @@ begin
          dlyCfg        => dlyCfg,
          enUsrDlyCfg   => enUsrDlyCfg,
          usrDlyCfg     => usrDlyCfg,
+         slideDlyDir   => slideDlyDir,
+         slideDlyCfg   => slideDlyCfg,
          locked        => gearboxAligned);
 
    ---------------------------------

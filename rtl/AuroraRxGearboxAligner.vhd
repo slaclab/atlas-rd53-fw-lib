@@ -2,10 +2,6 @@
 -- File       : AuroraRxChannel.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Company    : SLAC National Accelerator Laboratory
--- Platform   : 
--- Standard   : VHDL'93/02
--------------------------------------------------------------------------------
 -- Description: Aligns the LVDS RX gearbox.
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
@@ -39,6 +35,8 @@ entity AuroraRxGearboxAligner is
       dlyCfg        : out slv(8 downto 0);
       enUsrDlyCfg   : in  sl;
       usrDlyCfg     : in  slv(8 downto 0);
+      slideDlyDir   : in  sl;
+      slideDlyCfg   : in  slv(5 downto 0);
       locked        : out sl);
 end entity AuroraRxGearboxAligner;
 
@@ -50,6 +48,7 @@ architecture rtl of AuroraRxGearboxAligner is
    type StateType is (
       UNLOCKED_S,
       SLIP_WAIT_S,
+      LOCKING_S,
       LOCKED_S);
 
    type RegType is record
@@ -57,10 +56,12 @@ architecture rtl of AuroraRxGearboxAligner is
       usrDlyCfg   : slv(8 downto 0);
       dlyLoad     : slv(1 downto 0);
       dlyConfig   : slv(8 downto 0);
+      dlyCache    : slv(8 downto 0);
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
       goodCnt     : natural range 0 to LOCKED_CNT_C-1;
       slip        : sl;
       hdrErrDet   : sl;
+      armed       : sl;
       locked      : sl;
       state       : StateType;
    end record RegType;
@@ -69,11 +70,13 @@ architecture rtl of AuroraRxGearboxAligner is
       enUsrDlyCfg => '0',
       usrDlyCfg   => (others => '0'),
       dlyLoad     => (others => '0'),
-      dlyConfig   => (others => '0'),
+      dlyConfig   => toSlv(64, 9),
+      dlyCache    => toSlv(64, 9),
       slipWaitCnt => 0,
       goodCnt     => 0,
       slip        => '0',
       hdrErrDet   => '0',
+      armed       => '0',
       locked      => '0',
       state       => UNLOCKED_S);
 
@@ -82,23 +85,42 @@ architecture rtl of AuroraRxGearboxAligner is
 
 begin
 
-   comb : process (enUsrDlyCfg, r, rst, rxHeader, rxHeaderValid, usrDlyCfg) is
+   comb : process (enUsrDlyCfg, r, rst, rxHeader, rxHeaderValid, slideDlyCfg,
+                   slideDlyDir, usrDlyCfg) is
       variable v : RegType;
 
       procedure slipProcedure is
+         variable delayConfig : slv(8 downto 0);
       begin
 
-         -- Update and Increment the RX IDELAY configuration
-         v.dlyLoad(1) := '1';
-         v.dlyConfig  := r.dlyConfig + 1;
-
-         -- Check for roll over of delay configuration
-         if (v.dlyConfig = 0) then
-            -- Slip by 1-bit in the gearbox
-            v.slip := '1';
+         -- Select the source of delay
+         if (r.armed = '1') then
+            -- Use the cached value before the slide
+            delayConfig := r.dlyCache;
+         else
+            -- Use the registered value
+            delayConfig := r.dlyConfig;
          end if;
 
-         -- Reset the flag
+         -- Update the Delay module
+         v.dlyLoad(1) := '1';
+
+         -- Check for max value
+         if (delayConfig = (511-63)) then
+
+            -- Set min. value
+            v.dlyConfig := toSlv(64, 9);
+
+            -- Slip by 1-bit in the gearbox
+            v.slip := '1';
+
+         else
+            -- Increment the counter
+            v.dlyConfig := delayConfig + 1;
+         end if;
+
+         -- Reset the flags
+         v.armed  := '0';
          v.locked := '0';
 
          -- Reset the counter
@@ -132,36 +154,86 @@ begin
                   slipProcedure;
                else
                   -- Next state
-                  v.state := LOCKED_S;
+                  v.state := LOCKING_S;
                end if;
             end if;
          ----------------------------------------------------------------------
          when SLIP_WAIT_S =>
             -- Check the counter
             if (r.slipWaitCnt = SLIP_WAIT_C-1) then
+
                -- Reset the counter
                v.slipWaitCnt := 0;
-               -- Next state
-               v.state       := UNLOCKED_S;
+
+               -- Check for armed mode
+               if (r.armed = '1') then
+                  -- Next state
+                  v.state := LOCKED_S;
+               else
+                  -- Next state
+                  v.state := UNLOCKED_S;
+               end if;
+
             else
                -- Increment the counter
                v.slipWaitCnt := r.slipWaitCnt + 1;
             end if;
          ----------------------------------------------------------------------
-         when LOCKED_S =>
+         when LOCKING_S =>
             -- Check for data
             if (rxHeaderValid = '1') then
+
                -- Check for bad header
                if (rxHeader = "00" or rxHeader = "11") then
                   -- Execute the slip procedure
                   slipProcedure;
+
                elsif (r.goodCnt /= LOCKED_CNT_C-1) then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
                else
+
+                  -- Reset the flag
+                  v.armed := '1';
+
+                  -- Reset the counter
+                  v.goodCnt := 0;
+
+                  -- Make a cached copy
+                  v.dlyCache := r.dlyConfig;
+
+                  -- Check for an addition slide
+                  if (slideDlyDir = '1') then
+                     v.dlyConfig := r.dlyConfig + resize(slideDlyCfg, 9);
+                  -- Else subtraction slide
+                  else
+                     v.dlyConfig := r.dlyConfig - resize(slideDlyCfg, 9);
+                  end if;
+
+                  -- Next state
+                  v.state := SLIP_WAIT_S;
+
+               end if;
+            end if;
+         ----------------------------------------------------------------------
+         when LOCKED_S =>
+            -- Check for data
+            if (rxHeaderValid = '1') then
+
+               -- Check for bad header
+               if (rxHeader = "00" or rxHeader = "11") then
+                  -- Execute the slip procedure
+                  slipProcedure;
+
+               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
+                  -- Increment the counter
+                  v.goodCnt := r.goodCnt + 1;
+
+               else
                   -- Set the flag
                   v.locked := '1';
                end if;
+
             end if;
       ----------------------------------------------------------------------
       end case;
