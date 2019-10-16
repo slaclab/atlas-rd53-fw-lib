@@ -29,24 +29,25 @@ entity AuroraRxLane is
       SIMULATION_G : boolean := false);
    port (
       -- RD53 ASIC Serial Interface
-      serDesData  : in  slv(7 downto 0);
-      dlyLoad     : out sl;
-      dlyCfg      : out slv(8 downto 0);
-      enUsrDlyCfg : in  sl;
-      usrDlyCfg   : in  slv(8 downto 0);
-      eyescanCfg  : in  slv(7 downto 0);
-      hdrErrDet   : out sl;
-      bitSlip     : out sl;
-      polarity    : in  sl;
-      selectRate  : in  slv(1 downto 0);
+      serDesData    : in  slv(7 downto 0);
+      dlyLoad       : out sl;
+      dlyCfg        : out slv(8 downto 0);
+      enUsrDlyCfg   : in  sl;
+      usrDlyCfg     : in  slv(8 downto 0);
+      eyescanCfg    : in  slv(7 downto 0);
+      lockingCntCfg : in  slv(15 downto 0);
+      hdrErrDet     : out sl;
+      bitSlip       : out sl;
+      polarity      : in  sl;
+      selectRate    : in  slv(1 downto 0);
       -- Timing Interface
-      clk160MHz   : in  sl;
-      rst160MHz   : in  sl;
+      clk160MHz     : in  sl;
+      rst160MHz     : in  sl;
       -- Output
-      rxLinkUp    : out sl;
-      rxValid     : out sl;
-      rxHeader    : out slv(1 downto 0);
-      rxData      : out slv(63 downto 0));
+      rxLinkUp      : out sl;
+      rxValid       : out sl;
+      rxHeader      : out slv(1 downto 0);
+      rxData        : out slv(63 downto 0));
 end AuroraRxLane;
 
 architecture mapping of AuroraRxLane is
@@ -220,6 +221,7 @@ begin
          usrDlyCfg      => usrDlyCfg,
          bypFirstBerDet => selectRate(1),
          eyescanCfg     => eyescanCfg,
+         lockingCntCfg  => lockingCntCfg,
          locked         => gearboxAligned);
 
    ---------------------------------

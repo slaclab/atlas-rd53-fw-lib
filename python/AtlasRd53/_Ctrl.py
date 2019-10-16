@@ -261,6 +261,14 @@ class Ctrl(pr.Device):
             mode         = 'RW',
         ))  
         
+        self.add(pr.RemoteVariable(
+            name         = 'LockingCntCfg', 
+            description  = 'Sets the number of good 2-bit headers required for locking per delay step sweep',
+            offset       = 0x818,
+            bitSize      = 16, 
+            mode         = 'RW',
+        ))          
+        
         self.addRemoteVariables(   
             name         = 'UserRxDelayTap',
             description  = 'Sets the RX IDELAY tap configuration (A.K.A. RxDelayTap) when EnUsrDlyCfg = 0x1',

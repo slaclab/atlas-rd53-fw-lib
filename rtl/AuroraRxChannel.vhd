@@ -30,34 +30,35 @@ entity AuroraRxChannel is
       SYNTH_MODE_G  : string  := "inferred");
    port (
       -- Deserialization Interface
-      serDesData   : in  Slv8Array(3 downto 0);
-      dlyLoad      : out slv(3 downto 0);
-      dlyCfg       : out Slv9Array(3 downto 0);
-      enUsrDlyCfg  : in  sl;
-      usrDlyCfg    : in  Slv9Array(3 downto 0);
-      eyescanCfg   : in  Slv8Array(3 downto 0);
-      bitSlip      : out slv(3 downto 0);
-      hdrErrDet    : out slv(3 downto 0);
+      serDesData    : in  Slv8Array(3 downto 0);
+      dlyLoad       : out slv(3 downto 0);
+      dlyCfg        : out Slv9Array(3 downto 0);
+      enUsrDlyCfg   : in  sl;
+      usrDlyCfg     : in  Slv9Array(3 downto 0);
+      eyescanCfg    : in  Slv8Array(3 downto 0);
+      lockingCntCfg : in  slv(15 downto 0);
+      bitSlip       : out slv(3 downto 0);
+      hdrErrDet     : out slv(3 downto 0);
       -- Timing Interface
-      clk160MHz    : in  sl;
-      rst160MHz    : in  sl;
+      clk160MHz     : in  sl;
+      rst160MHz     : in  sl;
       -- Status/Control Interface
-      enable       : in  slv(3 downto 0);
-      invData      : in  slv(3 downto 0);
-      selectRate   : in  slv(1 downto 0);
-      linkUp       : out slv(3 downto 0);
-      chBond       : out sl;
-      wrdSent      : out sl;
-      singleHdrDet : out sl;
-      doubleHdrDet : out sl;
-      singleHitDet : out sl;
-      doubleHitDet : out sl;
-      rxPhyXbar    : in  Slv2Array(3 downto 0);
-      debugStream  : in  sl;
+      enable        : in  slv(3 downto 0);
+      invData       : in  slv(3 downto 0);
+      selectRate    : in  slv(1 downto 0);
+      linkUp        : out slv(3 downto 0);
+      chBond        : out sl;
+      wrdSent       : out sl;
+      singleHdrDet  : out sl;
+      doubleHdrDet  : out sl;
+      singleHitDet  : out sl;
+      doubleHitDet  : out sl;
+      rxPhyXbar     : in  Slv2Array(3 downto 0);
+      debugStream   : in  sl;
       -- AutoReg and Read back Interface
-      dataMaster   : out AxiStreamMasterType;
-      configMaster : out AxiStreamMasterType;
-      autoReadReg  : out Slv32Array(3 downto 0));
+      dataMaster    : out AxiStreamMasterType;
+      configMaster  : out AxiStreamMasterType;
+      autoReadReg   : out Slv32Array(3 downto 0));
 end AuroraRxChannel;
 
 architecture rtl of AuroraRxChannel is
@@ -145,24 +146,25 @@ begin
             SIMULATION_G => SIMULATION_G)
          port map (
             -- RD53 ASIC Serial Interface
-            serDesData  => serDesData(i),
-            dlyLoad     => dlyLoad(i),
-            dlyCfg      => dlyCfg(i),
-            enUsrDlyCfg => enUsrDlyCfg,
-            usrDlyCfg   => usrDlyCfg(i),
-            eyescanCfg  => eyescanCfg(i),
-            bitSlip     => bitSlip(i),
-            hdrErrDet   => hdrErrDet(i),
-            polarity    => invData(i),
-            selectRate  => selectRate,
+            serDesData    => serDesData(i),
+            dlyLoad       => dlyLoad(i),
+            dlyCfg        => dlyCfg(i),
+            enUsrDlyCfg   => enUsrDlyCfg,
+            usrDlyCfg     => usrDlyCfg(i),
+            eyescanCfg    => eyescanCfg(i),
+            lockingCntCfg => lockingCntCfg,
+            bitSlip       => bitSlip(i),
+            hdrErrDet     => hdrErrDet(i),
+            polarity      => invData(i),
+            selectRate    => selectRate,
             -- Timing Interface
-            clk160MHz   => clk160MHz,
-            rst160MHz   => rst160MHz,
+            clk160MHz     => clk160MHz,
+            rst160MHz     => rst160MHz,
             -- Output
-            rxLinkUp    => rxLinkUpOut(i),
-            rxValid     => rxValidOut(i),
-            rxHeader    => rxHeaderOut(i),
-            rxData      => rxDataOut(i));
+            rxLinkUp      => rxLinkUpOut(i),
+            rxValid       => rxValidOut(i),
+            rxHeader      => rxHeaderOut(i),
+            rxData        => rxDataOut(i));
 
       -- Crossbar Switch
       process(clk160MHz)

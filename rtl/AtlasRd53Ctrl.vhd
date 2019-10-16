@@ -24,6 +24,7 @@ use work.AxiLitePkg.all;
 entity AtlasRd53Ctrl is
    generic (
       TPD_G        : time                  := 1 ns;
+      SIMULATION_G : boolean               := false;
       RX_MAPPING_G : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11"));  -- Set the default RX PHY lane mapping 
    port (
       -- Monitoring Interface (clk160MHz domain)
@@ -51,6 +52,7 @@ entity AtlasRd53Ctrl is
       enUsrDlyCfg     : out sl;
       usrDlyCfg       : out Slv9Array(3 downto 0);
       eyescanCfg      : out Slv8Array(3 downto 0);
+      lockingCntCfg   : out slv(15 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
       localRst        : out sl;
@@ -67,6 +69,8 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
+   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
+
    constant STATUS_SIZE_C  : positive := 20;
    constant STATUS_WIDTH_C : positive := 16;
 
@@ -74,6 +78,7 @@ architecture rtl of AtlasRd53Ctrl is
       enUsrDlyCfg    : sl;
       usrDlyCfg      : Slv9Array(3 downto 0);
       eyescanCfg     : Slv8Array(3 downto 0);
+      lockingCntCfg  : slv(15 downto 0);
       batchSize      : slv(15 downto 0);
       timerConfig    : slv(15 downto 0);
       pllRst         : sl;
@@ -95,6 +100,7 @@ architecture rtl of AtlasRd53Ctrl is
       enUsrDlyCfg    => '0',
       usrDlyCfg      => (others => (others => '0')),
       eyescanCfg     => (others => toSlv(50, 8)),
+      lockingCntCfg  => toSlv(LOCKED_CNT_C, 16),
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
@@ -170,6 +176,7 @@ begin
 
       axiSlaveRegister (axilEp, x"810", 0, v.debugStream);
       axiSlaveRegister (axilEp, x"814", 0, v.enUsrDlyCfg);
+      axiSlaveRegister (axilEp, x"818", 0, v.lockingCntCfg);
 
       axiSlaveRegister (axilEp, x"820", 0, v.usrDlyCfg(0));
       axiSlaveRegister (axilEp, x"824", 0, v.usrDlyCfg(1));
@@ -283,6 +290,16 @@ begin
          clk     => clk160MHz,
          dataIn  => r.enUsrDlyCfg,
          dataOut => enUsrDlyCfg);
+
+   U_lockingCntCfg : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => TPD_G,
+         DATA_WIDTH_G => 16)
+      port map (
+         wr_clk => axilClk,
+         din    => r.lockingCntCfg,
+         rd_clk => clk160MHz,
+         dout   => lockingCntCfg);
 
    GEN_VEC : for i in 3 downto 0 generate
 

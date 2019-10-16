@@ -112,10 +112,11 @@ architecture mapping of AtlasRd53Core is
    signal localReset  : sl;
    signal reset160MHz : sl;
 
-   signal dlyConfig   : Slv9Array(3 downto 0);
-   signal enUsrDlyCfg : sl;
-   signal usrDlyCfg   : Slv9Array(3 downto 0);
-   signal eyescanCfg  : Slv8Array(3 downto 0);
+   signal dlyConfig     : Slv9Array(3 downto 0);
+   signal enUsrDlyCfg   : sl;
+   signal usrDlyCfg     : Slv9Array(3 downto 0);
+   signal eyescanCfg    : Slv8Array(3 downto 0);
+   signal lockingCntCfg : slv(15 downto 0);
 
 begin
 
@@ -137,6 +138,7 @@ begin
    U_Ctrl : entity work.AtlasRd53Ctrl
       generic map (
          TPD_G        => TPD_G,
+         SIMULATION_G => SIMULATION_G,
          RX_MAPPING_G => RX_MAPPING_G)
       port map (
          -- Monitoring Interface (clk160MHz domain)
@@ -165,6 +167,7 @@ begin
          enUsrDlyCfg     => enUsrDlyCfg,
          usrDlyCfg       => usrDlyCfg,
          eyescanCfg      => eyescanCfg,
+         lockingCntCfg   => lockingCntCfg,
          pllRst          => pllRst,
          localRst        => localRst,
          batchSize       => batchSize,
@@ -215,34 +218,35 @@ begin
          SYNTH_MODE_G  => SYNTH_MODE_G)
       port map (
          -- Deserialization Interface
-         serDesData   => serDesData,
-         dlyLoad      => dlyLoad,
-         dlyCfg       => dlyConfig,
-         enUsrDlyCfg  => enUsrDlyCfg,
-         usrDlyCfg    => usrDlyCfg,
-         eyescanCfg   => eyescanCfg,
-         bitSlip      => bitSlip,
-         hdrErrDet    => hdrErrDet,
+         serDesData    => serDesData,
+         dlyLoad       => dlyLoad,
+         dlyCfg        => dlyConfig,
+         enUsrDlyCfg   => enUsrDlyCfg,
+         usrDlyCfg     => usrDlyCfg,
+         eyescanCfg    => eyescanCfg,
+         lockingCntCfg => lockingCntCfg,
+         bitSlip       => bitSlip,
+         hdrErrDet     => hdrErrDet,
          -- Timing Interface
-         clk160MHz    => clk160MHz,
-         rst160MHz    => reset160MHz,
+         clk160MHz     => clk160MHz,
+         rst160MHz     => reset160MHz,
          -- Status/Control Interface
-         enable       => enable,
-         selectRate   => selectRate,
-         invData      => invData,
-         linkUp       => linkUp,
-         chBond       => chBond,
-         wrdSent      => wrdSent,
-         singleHdrDet => singleHdrDet,
-         doubleHdrDet => doubleHdrDet,
-         singleHitDet => singleHitDet,
-         doubleHitDet => doubleHitDet,
-         rxPhyXbar    => rxPhyXbar,
-         debugStream  => debugStream,
+         enable        => enable,
+         selectRate    => selectRate,
+         invData       => invData,
+         linkUp        => linkUp,
+         chBond        => chBond,
+         wrdSent       => wrdSent,
+         singleHdrDet  => singleHdrDet,
+         doubleHdrDet  => doubleHdrDet,
+         singleHitDet  => singleHitDet,
+         doubleHitDet  => doubleHitDet,
+         rxPhyXbar     => rxPhyXbar,
+         debugStream   => debugStream,
          -- AutoReg and Read back Interface
-         dataMaster   => dataMaster,
-         configMaster => configMaster,
-         autoReadReg  => autoReadReg);
+         dataMaster    => dataMaster,
+         configMaster  => configMaster,
+         autoReadReg   => autoReadReg);
 
    -----------------------         
    -- Outbound Config FIFO
@@ -321,9 +325,6 @@ begin
          sDataSlave  => txDataSlave,
          mDataMaster => batcherMaster,
          mDataSlave  => batcherSlave);
-
-   -- batcherMaster <= txDataMaster;
-   -- txDataSlave   <= batcherSlave;
 
    --------------------
    -- Resize/Burst FIFO

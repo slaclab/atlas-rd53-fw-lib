@@ -37,13 +37,13 @@ entity AuroraRxGearboxAligner is
       usrDlyCfg      : in  slv(8 downto 0);
       bypFirstBerDet : in  sl;
       eyescanCfg     : in  slv(7 downto 0);
+      lockingCntCfg  : in  slv(15 downto 0);
       locked         : out sl);
 end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
 
-   constant SLIP_WAIT_C  : positive := ite(SIMULATION_G, 10, 100);
-   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 1000);
+   constant SLIP_WAIT_C : positive := ite(SIMULATION_G, 10, 100);
 
    type StateType is (
       UNLOCKED_S,
@@ -59,7 +59,7 @@ architecture rtl of AuroraRxGearboxAligner is
       dlyConfig   : slv(8 downto 0);
       dlyCache    : slv(8 downto 0);
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
-      goodCnt     : natural range 0 to LOCKED_CNT_C-1;
+      goodCnt     : slv(15 downto 0);
       slip        : sl;
       hdrErrDet   : sl;
       firstError  : sl;
@@ -76,7 +76,7 @@ architecture rtl of AuroraRxGearboxAligner is
       dlyConfig   => (others => '0'),
       dlyCache    => (others => '0'),
       slipWaitCnt => 0,
-      goodCnt     => 0,
+      goodCnt     => (others => '0'),
       slip        => '0',
       hdrErrDet   => '0',
       firstError  => '0',
@@ -90,8 +90,8 @@ architecture rtl of AuroraRxGearboxAligner is
 
 begin
 
-   comb : process (bypFirstBerDet, enUsrDlyCfg, eyescanCfg, r, rst, rxHeader,
-                   rxHeaderValid, usrDlyCfg) is
+   comb : process (bypFirstBerDet, enUsrDlyCfg, eyescanCfg, lockingCntCfg, r,
+                   rst, rxHeader, rxHeaderValid, usrDlyCfg) is
       variable v : RegType;
 
       procedure slipProcedure is
@@ -128,23 +128,25 @@ begin
          v.locked   := '0';
 
          -- Reset the counter
-         v.goodCnt := 0;
+         v.goodCnt := (others => '0');
 
          -- Next state
          v.state := SLIP_WAIT_S;
 
       end procedure slipProcedure;
 
-      variable scanCnt  : slv(8 downto 0);
-      variable scanHalf : slv(8 downto 0);
+      variable scanCnt     : slv(8 downto 0);
+      variable scanHalf    : slv(8 downto 0);
+      variable minEyeWdith : slv(8 downto 0);
 
    begin
       -- Latch the current value
       v := r;
 
       -- Update the local variables
-      scanCnt  := (r.dlyConfig-r.dlyCache);
-      scanHalf := '0' & scanCnt(8 downto 1);
+      scanCnt     := (r.dlyConfig-r.dlyCache);
+      scanHalf    := '0' & scanCnt(8 downto 1);
+      minEyeWdith := '0' & eyescanCfg;
 
       -- Reset strobes
       v.slip      := '0';
@@ -208,7 +210,7 @@ begin
                   -- Execute the slip procedure
                   slipProcedure;
 
-               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
+               elsif (r.goodCnt < lockingCntCfg) then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
                else
@@ -224,7 +226,7 @@ begin
                      v.armed := '1';
 
                      -- Reset the counter
-                     v.goodCnt := 0;
+                     v.goodCnt := (others => '0');
 
                      -- Make a cached copy
                      v.dlyCache := r.dlyConfig;
@@ -246,25 +248,25 @@ begin
             if (rxHeaderValid = '1') then
 
                -- Check for bad header and less than min. eye width configuration
-               if (v.hdrErrDet = '1') and (scanCnt <= eyescanCfg) then
+               if (v.hdrErrDet = '1') and (scanCnt <= minEyeWdith) then
                   -- Execute the slip procedure
                   slipProcedure;
 
                -- Check for not roll over and not 
-               elsif (r.goodCnt /= LOCKED_CNT_C-1) and (v.hdrErrDet = '0') then
+               elsif (r.goodCnt < lockingCntCfg) and (v.hdrErrDet = '0') then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
                else
 
                   -- Reset the counter
-                  v.goodCnt := 0;
+                  v.goodCnt := (others => '0');
 
                   -- Update the Delay module
                   v.dlyLoad(1) := '1';
                   v.dlyConfig  := r.dlyConfig + 1;
 
                   -- Check for last count or first header error after min. eye width
-                  if (scanCnt >= 127) or (v.hdrErrDet = '1') then
+                  if (scanCnt >= 255) or (v.hdrErrDet = '1') then
 
                      -- Set to half way between eye
                      v.dlyConfig := r.dlyCache + scanHalf;
