@@ -50,8 +50,7 @@ entity AtlasRd53Ctrl is
       rxPhyXbar       : out Slv2Array(3 downto 0);
       enUsrDlyCfg     : out sl;
       usrDlyCfg       : out Slv9Array(3 downto 0);
-      slideDlyDir     : out sl;
-      slideDlyCfg     : out slv(5 downto 0);
+      eyescanCfg      : out Slv8Array(3 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
       localRst        : out sl;
@@ -74,8 +73,7 @@ architecture rtl of AtlasRd53Ctrl is
    type RegType is record
       enUsrDlyCfg    : sl;
       usrDlyCfg      : Slv9Array(3 downto 0);
-      slideDlyDir    : sl;
-      slideDlyCfg    : slv(5 downto 0);
+      eyescanCfg     : Slv8Array(3 downto 0);
       batchSize      : slv(15 downto 0);
       timerConfig    : slv(15 downto 0);
       pllRst         : sl;
@@ -96,8 +94,7 @@ architecture rtl of AtlasRd53Ctrl is
    constant REG_INIT_C : RegType := (
       enUsrDlyCfg    => '0',
       usrDlyCfg      => (others => (others => '0')),
-      slideDlyDir    => '0',
-      slideDlyCfg    => toSlv(32, 6),
+      eyescanCfg     => (others => toSlv(50, 8)),
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
@@ -174,13 +171,15 @@ begin
       axiSlaveRegister (axilEp, x"810", 0, v.debugStream);
       axiSlaveRegister (axilEp, x"814", 0, v.enUsrDlyCfg);
 
-      axiSlaveRegister (axilEp, x"818", 0, v.slideDlyCfg);
-      axiSlaveRegister (axilEp, x"818", 16, v.slideDlyDir);
-
       axiSlaveRegister (axilEp, x"820", 0, v.usrDlyCfg(0));
       axiSlaveRegister (axilEp, x"824", 0, v.usrDlyCfg(1));
       axiSlaveRegister (axilEp, x"828", 0, v.usrDlyCfg(2));
       axiSlaveRegister (axilEp, x"82C", 0, v.usrDlyCfg(3));
+
+      axiSlaveRegister (axilEp, x"830", 0, v.eyescanCfg(0));
+      axiSlaveRegister (axilEp, x"834", 0, v.eyescanCfg(1));
+      axiSlaveRegister (axilEp, x"838", 0, v.eyescanCfg(2));
+      axiSlaveRegister (axilEp, x"83C", 0, v.eyescanCfg(3));
 
       axiSlaveRegister (axilEp, x"FF0", 0, v.batchSize);
       axiSlaveRegister (axilEp, x"FF0", 16, v.timerConfig);
@@ -285,25 +284,17 @@ begin
          dataIn  => r.enUsrDlyCfg,
          dataOut => enUsrDlyCfg);
 
-   U_slideDlyDir : entity work.Synchronizer
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         clk     => clk160MHz,
-         dataIn  => r.slideDlyDir,
-         dataOut => slideDlyDir);
-
-   U_slideDlyCfg : entity work.SynchronizerFifo
-      generic map (
-         TPD_G        => TPD_G,
-         DATA_WIDTH_G => 6)
-      port map (
-         wr_clk => axilClk,
-         din    => r.slideDlyCfg,
-         rd_clk => clk160MHz,
-         dout   => slideDlyCfg);
-
    GEN_VEC : for i in 3 downto 0 generate
+
+      U_eyescanCfg : entity work.SynchronizerFifo
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 8)
+         port map (
+            wr_clk => axilClk,
+            din    => r.eyescanCfg(i),
+            rd_clk => clk160MHz,
+            dout   => eyescanCfg(i));
 
       U_usrDlyCfg : entity work.SynchronizerFifo
          generic map (

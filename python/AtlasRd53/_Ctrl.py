@@ -260,24 +260,6 @@ class Ctrl(pr.Device):
             bitSize      = 1, 
             mode         = 'RW',
         ))  
-
-        self.add(pr.RemoteVariable(
-            name         = 'SlideDlyCfg', 
-            description  = 'Amount of delay to add (or subtract) from the edge of the eye lock',
-            offset       = 0x818,
-            bitSize      = 6, 
-            bitOffset    = 0, 
-            mode         = 'RW',
-        ))  
-
-        self.add(pr.RemoteVariable(
-            name         = 'SlideDlyDir', 
-            description  = '0: subtract SlideDlyCfg for the edge of the eye lock, 0: add SlideDlyCfg for the edge of the eye lock',
-            offset       = 0x818,
-            bitSize      = 1, 
-            bitOffset    = 16, 
-            mode         = 'RW',
-        ))          
         
         self.addRemoteVariables(   
             name         = 'UserRxDelayTap',
@@ -288,6 +270,16 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
         )   
+        
+        self.addRemoteVariables(   
+            name         = 'MinEyeWidth',
+            description  = 'Sets the min. eye width in the RX IDELAY eye scan',
+            offset       = 0x830,
+            bitSize      = 8,
+            mode         = 'RW',
+            number       = 4,
+            stride       = 4,
+        )           
         
         self.add(pr.RemoteVariable(
             name         = 'BatchSize', 

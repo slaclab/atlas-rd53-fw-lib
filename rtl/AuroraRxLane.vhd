@@ -34,8 +34,7 @@ entity AuroraRxLane is
       dlyCfg      : out slv(8 downto 0);
       enUsrDlyCfg : in  sl;
       usrDlyCfg   : in  slv(8 downto 0);
-      slideDlyDir : in  sl;
-      slideDlyCfg : in  slv(5 downto 0);
+      eyescanCfg  : in  slv(7 downto 0);
       hdrErrDet   : out sl;
       bitSlip     : out sl;
       polarity    : in  sl;
@@ -209,19 +208,19 @@ begin
          TPD_G        => TPD_G,
          SIMULATION_G => SIMULATION_G)
       port map (
-         clk           => clk160MHz,
-         rst           => reset160MHz,
-         rxHeader      => phyRxHeader,
-         rxHeaderValid => phyRxValid,
-         hdrErrDet     => hdrErrDet,
-         bitSlip       => slip,
-         dlyLoad       => dlyLoad,
-         dlyCfg        => dlyCfg,
-         enUsrDlyCfg   => enUsrDlyCfg,
-         usrDlyCfg     => usrDlyCfg,
-         slideDlyDir   => slideDlyDir,
-         slideDlyCfg   => slideDlyCfg,
-         locked        => gearboxAligned);
+         clk            => clk160MHz,
+         rst            => reset160MHz,
+         rxHeader       => phyRxHeader,
+         rxHeaderValid  => phyRxValid,
+         hdrErrDet      => hdrErrDet,
+         bitSlip        => slip,
+         dlyLoad        => dlyLoad,
+         dlyCfg         => dlyCfg,
+         enUsrDlyCfg    => enUsrDlyCfg,
+         usrDlyCfg      => usrDlyCfg,
+         bypFirstBerDet => selectRate(1),
+         eyescanCfg     => eyescanCfg,
+         locked         => gearboxAligned);
 
    ---------------------------------
    -- Unscramble the data for 64b66b

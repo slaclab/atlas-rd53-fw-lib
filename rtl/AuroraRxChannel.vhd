@@ -35,8 +35,7 @@ entity AuroraRxChannel is
       dlyCfg       : out Slv9Array(3 downto 0);
       enUsrDlyCfg  : in  sl;
       usrDlyCfg    : in  Slv9Array(3 downto 0);
-      slideDlyDir  : in  sl;
-      slideDlyCfg  : in  slv(5 downto 0);
+      eyescanCfg   : in  Slv8Array(3 downto 0);
       bitSlip      : out slv(3 downto 0);
       hdrErrDet    : out slv(3 downto 0);
       -- Timing Interface
@@ -151,8 +150,7 @@ begin
             dlyCfg      => dlyCfg(i),
             enUsrDlyCfg => enUsrDlyCfg,
             usrDlyCfg   => usrDlyCfg(i),
-            slideDlyDir => slideDlyDir,
-            slideDlyCfg => slideDlyCfg,
+            eyescanCfg  => eyescanCfg(i),
             bitSlip     => bitSlip(i),
             hdrErrDet   => hdrErrDet(i),
             polarity    => invData(i),

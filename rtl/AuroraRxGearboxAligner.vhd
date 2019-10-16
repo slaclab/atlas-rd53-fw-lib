@@ -25,19 +25,19 @@ entity AuroraRxGearboxAligner is
       TPD_G        : time    := 1 ns;
       SIMULATION_G : boolean := false);
    port (
-      clk           : in  sl;
-      rst           : in  sl;
-      rxHeader      : in  slv(1 downto 0);
-      rxHeaderValid : in  sl;
-      bitSlip       : out sl;
-      hdrErrDet     : out sl;
-      dlyLoad       : out sl;
-      dlyCfg        : out slv(8 downto 0);
-      enUsrDlyCfg   : in  sl;
-      usrDlyCfg     : in  slv(8 downto 0);
-      slideDlyDir   : in  sl;
-      slideDlyCfg   : in  slv(5 downto 0);
-      locked        : out sl);
+      clk            : in  sl;
+      rst            : in  sl;
+      rxHeader       : in  slv(1 downto 0);
+      rxHeaderValid  : in  sl;
+      bitSlip        : out sl;
+      hdrErrDet      : out sl;
+      dlyLoad        : out sl;
+      dlyCfg         : out slv(8 downto 0);
+      enUsrDlyCfg    : in  sl;
+      usrDlyCfg      : in  slv(8 downto 0);
+      bypFirstBerDet : in  sl;
+      eyescanCfg     : in  slv(7 downto 0);
+      locked         : out sl);
 end entity AuroraRxGearboxAligner;
 
 architecture rtl of AuroraRxGearboxAligner is
@@ -62,6 +62,7 @@ architecture rtl of AuroraRxGearboxAligner is
       goodCnt     : natural range 0 to LOCKED_CNT_C-1;
       slip        : sl;
       hdrErrDet   : sl;
+      firstError  : sl;
       armed       : sl;
       scanDone    : sl;
       locked      : sl;
@@ -72,12 +73,13 @@ architecture rtl of AuroraRxGearboxAligner is
       enUsrDlyCfg => '0',
       usrDlyCfg   => (others => '0'),
       dlyLoad     => (others => '0'),
-      dlyConfig   => toSlv(64, 9),
-      dlyCache    => toSlv(64, 9),
+      dlyConfig   => (others => '0'),
+      dlyCache    => (others => '0'),
       slipWaitCnt => 0,
       goodCnt     => 0,
       slip        => '0',
       hdrErrDet   => '0',
+      firstError  => '0',
       armed       => '0',
       scanDone    => '0',
       locked      => '0',
@@ -88,8 +90,8 @@ architecture rtl of AuroraRxGearboxAligner is
 
 begin
 
-   comb : process (enUsrDlyCfg, r, rst, rxHeader, rxHeaderValid, slideDlyCfg,
-                   usrDlyCfg) is
+   comb : process (bypFirstBerDet, enUsrDlyCfg, eyescanCfg, r, rst, rxHeader,
+                   rxHeaderValid, usrDlyCfg) is
       variable v : RegType;
 
       procedure slipProcedure is
@@ -99,17 +101,25 @@ begin
          v.dlyLoad(1) := '1';
 
          -- Check for max value
-         if (r.dlyConfig >= (511-63)) then
+         if (r.dlyConfig >= 255) then
 
             -- Set min. value
-            v.dlyConfig := toSlv(64, 9);
+            v.dlyConfig := (others => '0');
 
             -- Slip by 1-bit in the gearbox
             v.slip := '1';
 
+            -- Reset the flag
+            v.firstError := '0';
+
          else
+
             -- Increment the counter
             v.dlyConfig := r.dlyConfig + 1;
+
+            -- Reset the flag
+            v.firstError := '1';
+
          end if;
 
          -- Reset the flags
@@ -125,9 +135,16 @@ begin
 
       end procedure slipProcedure;
 
+      variable scanCnt  : slv(8 downto 0);
+      variable scanHalf : slv(8 downto 0);
+
    begin
       -- Latch the current value
       v := r;
+
+      -- Update the local variables
+      scanCnt  := (r.dlyConfig-r.dlyCache);
+      scanHalf := '0' & scanCnt(8 downto 1);
 
       -- Reset strobes
       v.slip      := '0';
@@ -196,21 +213,30 @@ begin
                   v.goodCnt := r.goodCnt + 1;
                else
 
-                  -- Set the flag
-                  v.armed := '1';
+                  -- Check if no bit errors detected yet during this IDELAY sweep 
+                  if (r.firstError = '0') and (bypFirstBerDet = '0') then
+                     -- Execute the slip procedure
+                     slipProcedure;
 
-                  -- Reset the counter
-                  v.goodCnt := 0;
+                  else
 
-                  -- Make a cached copy
-                  v.dlyCache := r.dlyConfig;
+                     -- Set the flag
+                     v.armed := '1';
 
-                  -- Update the Delay module
-                  v.dlyLoad(1) := '1';
-                  v.dlyConfig  := r.dlyConfig + 1;
+                     -- Reset the counter
+                     v.goodCnt := 0;
 
-                  -- Next state
-                  v.state := SLIP_WAIT_S;
+                     -- Make a cached copy
+                     v.dlyCache := r.dlyConfig;
+
+                     -- Update the Delay module
+                     v.dlyLoad(1) := '1';
+                     v.dlyConfig  := r.dlyConfig + 1;
+
+                     -- Next state
+                     v.state := SLIP_WAIT_S;
+
+                  end if;
 
                end if;
             end if;
@@ -219,12 +245,13 @@ begin
             -- Check for data
             if (rxHeaderValid = '1') then
 
-               -- Check for bad header
-               if (v.hdrErrDet = '1') then
+               -- Check for bad header and less than min. eye width configuration
+               if (v.hdrErrDet = '1') and (scanCnt <= eyescanCfg) then
                   -- Execute the slip procedure
                   slipProcedure;
 
-               elsif (r.goodCnt /= LOCKED_CNT_C-1) then
+               -- Check for not roll over and not 
+               elsif (r.goodCnt /= LOCKED_CNT_C-1) and (v.hdrErrDet = '0') then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
                else
@@ -236,11 +263,11 @@ begin
                   v.dlyLoad(1) := '1';
                   v.dlyConfig  := r.dlyConfig + 1;
 
-                  -- Check if a 64 count wide eye has been detected
-                  if (r.dlyConfig-r.dlyCache) = 63 then
+                  -- Check for last count or first header error after min. eye width
+                  if (scanCnt >= 127) or (v.hdrErrDet = '1') then
 
-                     -- Perform the slide
-                     v.dlyConfig := r.dlyConfig - resize(slideDlyCfg, 9);
+                     -- Set to half way between eye
+                     v.dlyConfig := r.dlyCache + scanHalf;
 
                      -- Set the flag
                      v.scanDone := '1';
