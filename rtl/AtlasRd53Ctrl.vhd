@@ -52,7 +52,7 @@ entity AtlasRd53Ctrl is
       enUsrDlyCfg     : out sl;
       usrDlyCfg       : out Slv9Array(3 downto 0);
       eyescanCfg      : out Slv8Array(3 downto 0);
-      lockingCntCfg   : out slv(15 downto 0);
+      lockingCntCfg   : out slv(23 downto 0);
       debugStream     : out sl;
       pllRst          : out sl;
       localRst        : out sl;
@@ -69,8 +69,6 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant LOCKED_CNT_C : positive := ite(SIMULATION_G, 100, 10000);
-
    constant STATUS_SIZE_C  : positive := 20;
    constant STATUS_WIDTH_C : positive := 16;
 
@@ -78,7 +76,7 @@ architecture rtl of AtlasRd53Ctrl is
       enUsrDlyCfg    : sl;
       usrDlyCfg      : Slv9Array(3 downto 0);
       eyescanCfg     : Slv8Array(3 downto 0);
-      lockingCntCfg  : slv(15 downto 0);
+      lockingCntCfg  : slv(23 downto 0);
       batchSize      : slv(15 downto 0);
       timerConfig    : slv(15 downto 0);
       pllRst         : sl;
@@ -99,8 +97,8 @@ architecture rtl of AtlasRd53Ctrl is
    constant REG_INIT_C : RegType := (
       enUsrDlyCfg    => '0',
       usrDlyCfg      => (others => (others => '0')),
-      eyescanCfg     => (others => toSlv(50, 8)),
-      lockingCntCfg  => toSlv(LOCKED_CNT_C, 16),
+      eyescanCfg     => (others => toSlv(80, 8)),
+      lockingCntCfg  => ite(SIMULATION_G, x"00_0064", x"00_FFFF"),
       batchSize      => (others => '0'),
       timerConfig    => (others => '0'),
       pllRst         => '0',
@@ -294,7 +292,7 @@ begin
    U_lockingCntCfg : entity work.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
-         DATA_WIDTH_G => 16)
+         DATA_WIDTH_G => 24)
       port map (
          wr_clk => axilClk,
          din    => r.lockingCntCfg,

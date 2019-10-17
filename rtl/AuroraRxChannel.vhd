@@ -36,7 +36,7 @@ entity AuroraRxChannel is
       enUsrDlyCfg   : in  sl;
       usrDlyCfg     : in  Slv9Array(3 downto 0);
       eyescanCfg    : in  Slv8Array(3 downto 0);
-      lockingCntCfg : in  slv(15 downto 0);
+      lockingCntCfg : in  slv(23 downto 0);
       bitSlip       : out slv(3 downto 0);
       hdrErrDet     : out slv(3 downto 0);
       -- Timing Interface

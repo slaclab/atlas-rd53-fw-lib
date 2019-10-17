@@ -35,7 +35,7 @@ entity AuroraRxLane is
       enUsrDlyCfg   : in  sl;
       usrDlyCfg     : in  slv(8 downto 0);
       eyescanCfg    : in  slv(7 downto 0);
-      lockingCntCfg : in  slv(15 downto 0);
+      lockingCntCfg : in  slv(23 downto 0);
       hdrErrDet     : out sl;
       bitSlip       : out sl;
       polarity      : in  sl;

@@ -37,7 +37,7 @@ entity AuroraRxGearboxAligner is
       usrDlyCfg      : in  slv(8 downto 0);
       bypFirstBerDet : in  sl;
       eyescanCfg     : in  slv(7 downto 0);
-      lockingCntCfg  : in  slv(15 downto 0);
+      lockingCntCfg  : in  slv(23 downto 0);
       locked         : out sl);
 end entity AuroraRxGearboxAligner;
 
@@ -59,7 +59,7 @@ architecture rtl of AuroraRxGearboxAligner is
       dlyConfig   : slv(8 downto 0);
       dlyCache    : slv(8 downto 0);
       slipWaitCnt : natural range 0 to SLIP_WAIT_C-1;
-      goodCnt     : slv(15 downto 0);
+      goodCnt     : slv(23 downto 0);
       slip        : sl;
       hdrErrDet   : sl;
       firstError  : sl;

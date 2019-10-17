@@ -116,7 +116,7 @@ architecture mapping of AtlasRd53Core is
    signal enUsrDlyCfg   : sl;
    signal usrDlyCfg     : Slv9Array(3 downto 0);
    signal eyescanCfg    : Slv8Array(3 downto 0);
-   signal lockingCntCfg : slv(15 downto 0);
+   signal lockingCntCfg : slv(23 downto 0);
 
 begin
 
