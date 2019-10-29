@@ -29,7 +29,7 @@ entity AtlasRd53TxCmdWrapper is
    generic (
       TPD_G         : time   := 1 ns;
       AXIS_CONFIG_G : AxiStreamConfigType;
-      XIL_DEVICE_G  : string := "7SERIES";
+      XIL_DEVICE_G  : string := "NONE";
       SYNTH_MODE_G  : string := "inferred";
       MEMORY_TYPE_G : string := "block");
    port (
@@ -46,8 +46,9 @@ entity AtlasRd53TxCmdWrapper is
       clk160MHz       : in  sl;
       rst160MHz       : in  sl;
       -- Command Serial Interface (clk160MHz domain)
-      dlyCmd          : in  sl;
-      invCmd          : in  sl;
+      dlyCmd          : in  sl := '0';
+      invCmd          : in  sl := '0';
+      cmdOut          : out sl;
       cmdOutP         : out sl;
       cmdOutN         : out sl);
 end entity AtlasRd53TxCmdWrapper;
@@ -76,6 +77,8 @@ architecture rtl of AtlasRd53TxCmdWrapper is
    signal cmdOutReg : sl;
 
 begin
+
+   cmdOut <= cmd;
 
    --------------------------------------------------------------
    -- Prevent back pressuring the DMA if the 160 MHz is not ready
@@ -229,10 +232,12 @@ begin
             SR => '0');
    end generate;
 
-   U_OBUFDS : OBUFDS
-      port map (
-         I  => cmdOutReg,
-         O  => cmdOutP,
-         OB => cmdOutN);
+   GEN_OBUFDS : if (XIL_DEVICE_G /= "NONE") generate
+      U_OBUFDS : OBUFDS
+         port map (
+            I  => cmdOutReg,
+            O  => cmdOutP,
+            OB => cmdOutN);
+   end generate;
 
 end rtl;
