@@ -33,11 +33,11 @@ entity AuroraRxGearboxAligner is
       hdrErrDet      : out sl;
       dlyLoad        : out sl;
       dlyCfg         : out slv(8 downto 0);
-      enUsrDlyCfg    : in  sl;
-      usrDlyCfg      : in  slv(8 downto 0);
-      bypFirstBerDet : in  sl;
-      eyescanCfg     : in  slv(7 downto 0);
-      lockingCntCfg  : in  slv(23 downto 0);
+      enUsrDlyCfg    : in  sl               := '1';
+      usrDlyCfg      : in  slv(8 downto 0)  := (others => '0');
+      bypFirstBerDet : in  sl               := '1';
+      eyescanCfg     : in  slv(7 downto 0)  := toSlv(80, 8);
+      lockingCntCfg  : in  slv(23 downto 0) := ite(SIMULATION_G, x"00_0064", x"00_FFFF");
       locked         : out sl);
 end entity AuroraRxGearboxAligner;
 

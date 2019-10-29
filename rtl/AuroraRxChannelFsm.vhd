@@ -36,6 +36,7 @@ entity AuroraRxChannelFsm is
       rdEn         : out slv(3 downto 0);
       header       : in  Slv2Array(3 downto 0)  := (others => (others => '0'));
       data         : in  Slv64Array(3 downto 0) := (others => (others => '0'));
+      fifoRst      : out sl;
       -- Status/Control Interface
       enable       : in  slv(3 downto 0)        := (others => '0');
       invData      : in  slv(3 downto 0)        := (others => '0');

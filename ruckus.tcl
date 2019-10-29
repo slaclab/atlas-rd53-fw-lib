@@ -34,3 +34,6 @@ if { ${family} eq {kintexu} ||
      ${family} eq {zynquplus} } {
    loadSource -dir "$::DIR_PATH/rtl/UltraScale"
 }
+
+# Adding the common Si5345 configuration
+add_files -norecurse "$::DIR_PATH/mem/Si5345-RevD-Registers-160MHz.mem"
