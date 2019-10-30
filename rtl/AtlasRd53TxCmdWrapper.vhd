@@ -43,6 +43,7 @@ entity AtlasRd53TxCmdWrapper is
       sConfigMaster   : in  AxiStreamMasterType;
       sConfigSlave    : out AxiStreamSlaveType;
       -- Timing Interface
+      clkEn160MHz     : in  sl := '1';
       clk160MHz       : in  sl;
       rst160MHz       : in  sl;
       -- Command Serial Interface (clk160MHz domain)
@@ -146,7 +147,7 @@ begin
          INT_PIPE_STAGES_G   => 0,
          PIPE_STAGES_G       => 0,
          SLAVE_READY_EN_G    => true,
-         VALID_THOLD_G       => 500,   -- less than 2**FIFO_ADDR_WIDTH_G
+         VALID_THOLD_G       => 500,    -- less than 2**FIFO_ADDR_WIDTH_G
          VALID_BURST_MODE_G  => true,   -- bursting mode enabled
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
@@ -174,13 +175,14 @@ begin
          TPD_G => TPD_G)
       port map (
          -- Clock and Reset
-         clk160MHz => clk160MHz,
-         rst160MHz => rst160MHz,
+         clkEn160MHz => clkEn160MHz,
+         clk160MHz   => clk160MHz,
+         rst160MHz   => rst160MHz,
          -- Streaming RD53 Config Interface (clk160MHz domain)
-         cmdMaster => cmdMaster,
-         cmdSlave  => cmdSlave,
+         cmdMaster   => cmdMaster,
+         cmdSlave    => cmdSlave,
          -- Serial Output Interface
-         cmdOut    => cmd);
+         cmdOut      => cmd);
 
    ----------------------------------
    -- Set the command polarity output

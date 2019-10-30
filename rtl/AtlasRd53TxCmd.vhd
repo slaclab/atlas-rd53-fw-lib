@@ -26,13 +26,14 @@ entity AtlasRd53TxCmd is
       TPD_G : time := 1 ns);
    port (
       -- Clock and Reset
-      clk160MHz : in  sl;
-      rst160MHz : in  sl;
+      clkEn160MHz : in  sl;
+      clk160MHz   : in  sl;
+      rst160MHz   : in  sl;
       -- Streaming RD53 Config Interface (clk160MHz domain)
-      cmdMaster : in  AxiStreamMasterType;
-      cmdSlave  : out AxiStreamSlaveType;
+      cmdMaster   : in  AxiStreamMasterType;
+      cmdSlave    : out AxiStreamSlaveType;
       -- Serial Output Interface
-      cmdOut    : out sl);
+      cmdOut      : out sl);
 end AtlasRd53TxCmd;
 
 architecture rtl of AtlasRd53TxCmd is
@@ -70,7 +71,7 @@ architecture rtl of AtlasRd53TxCmd is
 
 begin
 
-   comb : process (cmdMaster, r, rst160MHz) is
+   comb : process (clkEn160MHz, cmdMaster, r, rst160MHz) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -79,57 +80,62 @@ begin
       -- Reset the strobes
       v.cmdSlave.tReady := '0';
 
-      -- Update the shift register
-      v.shiftReg := r.shiftReg(30 downto 0) & '0';
+      -- Check for the clk enable
+      if (clkEn160MHz = '1') then
 
-      -- Increment the counter
-      v.shiftCnt := r.shiftCnt + 1;
+         -- Update the shift register
+         v.shiftReg := r.shiftReg(30 downto 0) & '0';
 
-      -- Check if last bit in shift registers sent
-      if (r.shiftCnt = "11111") then
+         -- Increment the counter
+         v.shiftCnt := r.shiftCnt + 1;
 
-         -- Default shift reg update value
-         v.shiftReg := NOP_DWORD_C;
+         -- Check if last bit in shift registers sent
+         if (r.shiftCnt = "11111") then
 
-         -- State Machine
-         case r.state is
+            -- Default shift reg update value
+            v.shiftReg := NOP_DWORD_C;
+
+            -- State Machine
+            case r.state is
+               ----------------------------------------------------------------------
+               when INIT_S =>
+                  -- Check initialization completed
+                  if (r.init = 0) then
+                     -- Next state
+                     v.state := LISTEN_S;
+                  else
+                     -- Decrement the counter
+                     v.init := r.init -1;
+                  end if;
+               ----------------------------------------------------------------------
+               when LISTEN_S =>
+                  -- Check for streaming data
+                  if (cmdMaster.tValid = '1') then
+                     -- Accept the data
+                     v.cmdSlave.tReady := '1';
+                     -- Move the data (only 32-bit data from the software)
+                     v.shiftReg        := cmdMaster.tData(31 downto 0);
+                     -- Sample for simulation debugging
+                     v.tData           := cmdMaster.tData(31 downto 0);
+                  end if;
             ----------------------------------------------------------------------
-            when INIT_S =>
-               -- Check initialization completed
-               if (r.init = 0) then
-                  -- Next state
-                  v.state := LISTEN_S;
-               else
-                  -- Decrement the counter
-                  v.init := r.init -1;                  
-               end if;
-            ----------------------------------------------------------------------
-            when LISTEN_S =>
-               -- Check for streaming data
-               if (cmdMaster.tValid = '1') then
-                  -- Accept the data
-                  v.cmdSlave.tReady := '1';
-                  -- Move the data (only 32-bit data from the software)
-                  v.shiftReg        := cmdMaster.tData(31 downto 0);
-                  -- Sample for simulation debugging
-                  v.tData           := cmdMaster.tData(31 downto 0);
-               end if;
-         ----------------------------------------------------------------------
-         end case;
+            end case;
 
-         --------------------------------------------------------------------------------------
-         -- It is recommended that at lest one sync frame be inserted at least every 32 frames.
-         --------------------------------------------------------------------------------------
-         if (r.syncCnt = (32/2)-1) then  -- shift two frame into shiftReg
-            -- Check for NOP and not forwarding user config
-            if (v.shiftReg = NOP_DWORD_C) and (v.cmdSlave.tReady = '0') then
-               -- Insert the SYNC frame
-               v.shiftReg(15 downto 0) := SYNC_C;
-               -- Reset the counter
-               v.syncCnt               := 0;
+            --------------------------------------------------------------------------------------
+            -- It is recommended that at lest one sync frame be inserted at least every 32 frames.
+            --------------------------------------------------------------------------------------
+            if (r.syncCnt = (32/2)-1) then  -- shift two frame into shiftReg
+               -- Check for NOP and not forwarding user config
+               if (v.shiftReg = NOP_DWORD_C) and (v.cmdSlave.tReady = '0') then
+                  -- Insert the SYNC frame
+                  v.shiftReg(15 downto 0) := SYNC_C;
+                  -- Reset the counter
+                  v.syncCnt               := 0;
+               end if;
+            else
+               v.syncCnt := r.syncCnt + 1;
             end if;
-         else
-            v.syncCnt := r.syncCnt + 1;
+
          end if;
 
       end if;
