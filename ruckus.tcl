@@ -12,12 +12,6 @@ if { [info exists ::env(OVERRIDE_SUBMODULE_LOCKS)] != 1 || $::env(OVERRIDE_SUBMO
    puts "*********************************************************\n\n"
 }
 
-# Load ruckus files
-loadRuckusTcl "$::DIR_PATH/sim"
-
-# Load the source code
-loadSource      -dir "$::DIR_PATH/rtl"
-
 # Get the family type
 set family [getFpgaFamily]
 
@@ -25,15 +19,24 @@ if { ${family} eq {artix7}  ||
      ${family} eq {kintex7} ||
      ${family} eq {virtex7} ||
      ${family} eq {zynq} } {
-   loadSource -dir "$::DIR_PATH/rtl/7Series"
+   set fpgaType "7Series"
 }
 
 if { ${family} eq {kintexu} ||
      ${family} eq {kintexuplus} ||
      ${family} eq {virtexuplus} ||
-     ${family} eq {zynquplus} } {
-   loadSource -dir "$::DIR_PATH/rtl/UltraScale"
+     ${family} eq {virtexuplusHBM} ||
+     ${family} eq {zynquplus} ||
+     ${family} eq {zynquplusRFSOC} } {
+   set fpgaType "UltraScale"
 }
+
+# Load the source code
+loadSource -dir "$::DIR_PATH/rtl"
+loadSource -dir "$::DIR_PATH/rtl/${fpgaType}"
 
 # Adding the common Si5345 configuration
 add_files -norecurse "$::DIR_PATH/mem/Si5345-RevD-Registers-160MHz.mem"
+
+# Load ruckus files
+loadRuckusTcl "$::DIR_PATH/sim"
