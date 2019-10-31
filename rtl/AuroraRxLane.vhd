@@ -32,14 +32,14 @@ entity AuroraRxLane is
       serDesData    : in  slv(7 downto 0);
       dlyLoad       : out sl;
       dlyCfg        : out slv(8 downto 0);
-      enUsrDlyCfg   : in  sl;
-      usrDlyCfg     : in  slv(8 downto 0);
-      eyescanCfg    : in  slv(7 downto 0);
-      lockingCntCfg : in  slv(23 downto 0);
+      enUsrDlyCfg   : in  sl                    := '0';
+      usrDlyCfg     : in  slv(8 downto 0)       := (others => '0');
+      eyescanCfg    : in  slv(7 downto 0)       := toSlv(80, 8);
+      lockingCntCfg : in  slv(23 downto 0)      := ite(SIMULATION_G, x"00_0064", x"00_FFFF");
       hdrErrDet     : out sl;
       bitSlip       : out sl;
-      polarity      : in  sl;
-      selectRate    : in  slv(1 downto 0);
+      polarity      : in  sl := '1';
+      selectRate    : in  slv(1 downto 0)       := (others => '0');
       -- Timing Interface
       clk160MHz     : in  sl;
       rst160MHz     : in  sl;

@@ -33,7 +33,7 @@ entity AuroraRxGearboxAligner is
       hdrErrDet      : out sl;
       dlyLoad        : out sl;
       dlyCfg         : out slv(8 downto 0);
-      enUsrDlyCfg    : in  sl               := '1';
+      enUsrDlyCfg    : in  sl               := '0';
       usrDlyCfg      : in  slv(8 downto 0)  := (others => '0');
       bypFirstBerDet : in  sl               := '1';
       eyescanCfg     : in  slv(7 downto 0)  := toSlv(80, 8);
