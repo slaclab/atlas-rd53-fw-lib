@@ -39,6 +39,7 @@ entity AtlasRd53FmcMapping is
       -- Timing Clock/Reset Interface
       clk160MHz     : out   sl;
       rst160MHz     : out   sl;
+      pllClkOut     : out   sl;
       -- PLL Interface
       fpgaPllClkIn  : in    sl;
       pllRst        : in    slv(3 downto 0);
@@ -61,14 +62,15 @@ architecture mapping of AtlasRd53FmcMapping is
 
    signal pllReset   : sl;
    signal pllClk     : slv(1 downto 0);
-   signal pllClkBufg : slv(1 downto 0);
+   signal pllClkBufg : sl;
 
    signal dPortDataP : Slv4Array(3 downto 0);
    signal dPortDataN : Slv4Array(3 downto 0);
 
 begin
 
-   pllReset <= uOr(pllRst);
+   pllClkOut <= pllClkBufg;
+   pllReset  <= uOr(pllRst);
 
    GEN_PLL_CLK :
    for i in 1 downto 0 generate
@@ -77,11 +79,12 @@ begin
             I  => fmcLaP(i+0),
             IB => fmcLaN(i+0),
             O  => pllClk(i));
-      U_BUFG : BUFG
-         port map (
-            I => pllClk(i),
-            O => pllClkBufg(i));
    end generate GEN_PLL_CLK;
+
+   U_BUFG : BUFG
+      port map (
+         I => pllClk(0),
+         O => pllClkBufg);
 
    U_Selectio : entity work.AtlasRd53HsSelectio
       generic map(
@@ -89,7 +92,7 @@ begin
          SIMULATION_G => SIMULATION_G,
          XIL_DEVICE_G => XIL_DEVICE_G)
       port map (
-         ref160Clk     => pllClkBufg(0),
+         ref160Clk     => pllClkBufg,
          ref160Rst     => pllReset,
          -- Deserialization Interface
          serDesData    => serDesData,
