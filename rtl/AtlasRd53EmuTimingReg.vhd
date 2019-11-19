@@ -18,8 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
+library atlas_rd53_fw_lib;
 
 entity AtlasRd53EmuTimingReg is
    generic (
@@ -73,7 +76,7 @@ architecture mapping of AtlasRd53EmuTimingReg is
 
 begin
 
-   U_busy : entity work.Synchronizer
+   U_busy : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -81,7 +84,7 @@ begin
          dataIn  => busy,
          dataOut => busySync);
 
-   U_backpressure : entity work.SynchronizerOneShot
+   U_backpressure : entity surf.SynchronizerOneShot
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -140,7 +143,7 @@ begin
       end if;
    end process seq;
 
-   U_trigger : entity work.SynchronizerOneShot
+   U_trigger : entity surf.SynchronizerOneShot
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -148,7 +151,7 @@ begin
          dataIn  => r.trigger,
          dataOut => trigger);
 
-   U_timerSize : entity work.SynchronizerFifo
+   U_timerSize : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => timerSize'length)
@@ -158,7 +161,7 @@ begin
          rd_clk => clk160MHz,
          dout   => timerSize);
 
-   U_maxAddr : entity work.SynchronizerFifo
+   U_maxAddr : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => maxAddr'length)
@@ -168,7 +171,7 @@ begin
          rd_clk => clk160MHz,
          dout   => maxAddr);
 
-   U_iteration : entity work.SynchronizerFifo
+   U_iteration : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => iteration'length)

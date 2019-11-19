@@ -18,9 +18,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+
+library atlas_rd53_fw_lib;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -86,7 +89,7 @@ begin
          I => pllClk(0),
          O => pllClkBufg);
 
-   U_Selectio : entity work.AtlasRd53HsSelectio
+   U_Selectio : entity atlas_rd53_fw_lib.AtlasRd53HsSelectio
       generic map(
          TPD_G        => TPD_G,
          SIMULATION_G => SIMULATION_G,
@@ -106,7 +109,7 @@ begin
          clk160MHz     => clk160MHz,
          rst160MHz     => rst160MHz);
 
-   U_fpgaPllClk : entity work.ClkOutBufDiff
+   U_fpgaPllClk : entity surf.ClkOutBufDiff
       generic map (
          TPD_G        => TPD_G,
          XIL_DEVICE_G => XIL_DEVICE_G)

@@ -18,8 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
+library atlas_rd53_fw_lib;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -58,7 +61,7 @@ begin
    clk160MHz <= clock160MHz;
    rst160MHz <= reset160MHz;
 
-   U_MMCM : entity work.ClockManager7
+   U_MMCM : entity surf.ClockManager7
       generic map(
          TPD_G              => TPD_G,
          SIMULATION_G       => SIMULATION_G,
@@ -86,7 +89,7 @@ begin
    for i in NUM_CHIP_G-1 downto 0 generate
       GEN_LANE :
       for j in 3 downto 0 generate
-         U_Lane : entity work.AuroraRxLaneDeser
+         U_Lane : entity atlas_rd53_fw_lib.AuroraRxLaneDeser
             generic map (
                TPD_G => TPD_G)
             port map (

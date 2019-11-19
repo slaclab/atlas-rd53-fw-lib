@@ -18,9 +18,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+
+library atlas_rd53_fw_lib;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -85,7 +88,7 @@ begin
    -- Prevent back pressuring the DMA if the 160 MHz is not ready
    --------------------------------------------------------------
    sConfigSlave <= slave when (rdyL = '0') else AXI_STREAM_SLAVE_FORCE_C;
-   U_rdyL : entity work.Synchronizer
+   U_rdyL : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -96,7 +99,7 @@ begin
    -----------------------         
    -- Outbound Config FIFO
    -----------------------         
-   U_ConfigFifo : entity work.AxiStreamFifoV2
+   U_ConfigFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -122,7 +125,7 @@ begin
          mAxisMaster => configMaster,
          mAxisSlave  => configSlave);
 
-   U_Mux : entity work.AxiStreamMux
+   U_Mux : entity surf.AxiStreamMux
       generic map (
          TPD_G         => TPD_G,
          NUM_SLAVES_G  => 2,
@@ -140,7 +143,7 @@ begin
          mAxisMaster     => muxMaster,
          mAxisSlave      => muxSlave);
 
-   U_FW_CACH : entity work.AxiStreamFifoV2
+   U_FW_CACH : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -170,7 +173,7 @@ begin
          mAxisMaster => cmdMaster,
          mAxisSlave  => cmdSlave);
 
-   U_Cmd : entity work.AtlasRd53TxCmd
+   U_Cmd : entity atlas_rd53_fw_lib.AtlasRd53TxCmd
       generic map (
          TPD_G => TPD_G)
       port map (

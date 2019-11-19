@@ -18,8 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+
+library atlas_rd53_fw_lib;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -93,7 +95,7 @@ begin
    end generate GEN_REAL;
 
    GEN_SIM : if (SIMULATION_G = true) generate
-      U_ClkRst : entity work.ClkRst
+      U_ClkRst : entity surf.ClkRst
          generic map (
             CLK_PERIOD_G      => 1.5625 ns,  -- 640 MHz
             RST_START_DELAY_G => 0 ns,
@@ -122,7 +124,7 @@ begin
          CLR => '0',
          O   => clock160MHz);           -- 160 MHz
 
-   U_Rst160 : entity work.RstSync
+   U_Rst160 : entity surf.RstSync
       generic map (
          TPD_G          => TPD_G,
          IN_POLARITY_G  => '0',
@@ -132,7 +134,7 @@ begin
          asyncRst => locked,
          syncRst  => reset);
 
-   U_Reset : entity work.RstPipeline
+   U_Reset : entity surf.RstPipeline
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -144,7 +146,7 @@ begin
    for i in NUM_CHIP_G-1 downto 0 generate
       GEN_LANE :
       for j in 3 downto 0 generate
-         U_Lane : entity work.AuroraRxLaneDeser
+         U_Lane : entity atlas_rd53_fw_lib.AuroraRxLaneDeser
             generic map (
                TPD_G        => TPD_G,
                XIL_DEVICE_G => XIL_DEVICE_G)

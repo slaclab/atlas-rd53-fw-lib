@@ -18,10 +18,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+
+library atlas_rd53_fw_lib;
 
 entity AtlasRd53EmuTiming is
    generic (
@@ -61,7 +64,7 @@ begin
    ---------------------------------------------       
    -- AXI-Lite: BRAM trigger bit Pattern storage
    ---------------------------------------------       
-   U_LUT : entity work.AxiDualPortRam
+   U_LUT : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          SYNTH_MODE_G     => SYNTH_MODE_G,
@@ -88,7 +91,7 @@ begin
    --------------------------------
    -- FSM for reading out the BRAMs
    --------------------------------
-   U_FSM : entity work.AtlasRd53EmuTimingFsm
+   U_FSM : entity atlas_rd53_fw_lib.AtlasRd53EmuTimingFsm
       generic map (
          TPD_G        => TPD_G,
          ADDR_WIDTH_G => ADDR_WIDTH_G)
@@ -112,7 +115,7 @@ begin
    ---------------------------------------------------         
    -- Repeat the AXI stream to all RD53 CMD interfaces
    ---------------------------------------------------         
-   U_Repeater : entity work.AxiStreamRepeater
+   U_Repeater : entity surf.AxiStreamRepeater
       generic map(
          TPD_G                => TPD_G,
          NUM_MASTERS_G        => NUM_AXIS_G,

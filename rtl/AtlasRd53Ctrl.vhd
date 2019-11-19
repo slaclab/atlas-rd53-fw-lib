@@ -18,8 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
+library atlas_rd53_fw_lib;
 
 entity AtlasRd53Ctrl is
    generic (
@@ -222,7 +225,7 @@ begin
       end if;
    end process seq;
 
-   U_localRst : entity work.RstSync
+   U_localRst : entity surf.RstSync
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -230,7 +233,7 @@ begin
          asyncRst => r.localRst,
          syncRst  => localRst);
 
-   U_enable : entity work.SynchronizerVector
+   U_enable : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 4)
@@ -239,7 +242,7 @@ begin
          dataIn  => r.enable,
          dataOut => enable);
 
-   U_selectRate : entity work.SynchronizerVector
+   U_selectRate : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 2)
@@ -248,7 +251,7 @@ begin
          dataIn  => r.selectRate,
          dataOut => selectRate);
 
-   U_invData : entity work.SynchronizerVector
+   U_invData : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 4)
@@ -257,7 +260,7 @@ begin
          dataIn  => r.invData,
          dataOut => invData);
 
-   U_invCmd : entity work.Synchronizer
+   U_invCmd : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -265,7 +268,7 @@ begin
          dataIn  => r.invCmd,
          dataOut => invCmd);
 
-   U_dlyCmd : entity work.Synchronizer
+   U_dlyCmd : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -273,7 +276,7 @@ begin
          dataIn  => r.dlyCmd,
          dataOut => dlyCmd);
 
-   U_debugStream : entity work.Synchronizer
+   U_debugStream : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -281,7 +284,7 @@ begin
          dataIn  => r.debugStream,
          dataOut => debugStream);
 
-   U_enUsrDlyCfg : entity work.Synchronizer
+   U_enUsrDlyCfg : entity surf.Synchronizer
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -289,7 +292,7 @@ begin
          dataIn  => r.enUsrDlyCfg,
          dataOut => enUsrDlyCfg);
 
-   U_lockingCntCfg : entity work.SynchronizerFifo
+   U_lockingCntCfg : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => 24)
@@ -301,7 +304,7 @@ begin
 
    GEN_VEC : for i in 3 downto 0 generate
 
-      U_eyescanCfg : entity work.SynchronizerFifo
+      U_eyescanCfg : entity surf.SynchronizerFifo
          generic map (
             TPD_G        => TPD_G,
             DATA_WIDTH_G => 8)
@@ -311,7 +314,7 @@ begin
             rd_clk => clk160MHz,
             dout   => eyescanCfg(i));
 
-      U_usrDlyCfg : entity work.SynchronizerFifo
+      U_usrDlyCfg : entity surf.SynchronizerFifo
          generic map (
             TPD_G        => TPD_G,
             DATA_WIDTH_G => 9)
@@ -321,7 +324,7 @@ begin
             rd_clk => clk160MHz,
             dout   => usrDlyCfg(i));
 
-      U_rxPhyXbar : entity work.SynchronizerVector
+      U_rxPhyXbar : entity surf.SynchronizerVector
          generic map (
             TPD_G   => TPD_G,
             WIDTH_G => 2)
@@ -330,7 +333,7 @@ begin
             dataIn  => r.rxPhyXbar(i),
             dataOut => rxPhyXbar(i));
 
-      U_autoReadReg : entity work.SynchronizerFifo
+      U_autoReadReg : entity surf.SynchronizerFifo
          generic map (
             TPD_G        => TPD_G,
             DATA_WIDTH_G => 32)
@@ -340,7 +343,7 @@ begin
             rd_clk => axilClk,
             dout   => autoReadRegSync(i));
 
-      U_dlyCfg : entity work.SynchronizerFifo
+      U_dlyCfg : entity surf.SynchronizerFifo
          generic map (
             TPD_G        => TPD_G,
             DATA_WIDTH_G => 9)
@@ -352,7 +355,7 @@ begin
 
    end generate GEN_VEC;
 
-   U_SyncStatusVector : entity work.SyncStatusVector
+   U_SyncStatusVector : entity surf.SyncStatusVector
       generic map (
          TPD_G          => TPD_G,
          COMMON_CLK_G   => false,

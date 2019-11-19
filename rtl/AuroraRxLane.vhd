@@ -18,7 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+
+library atlas_rd53_fw_lib;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -89,7 +92,7 @@ begin
 
    bitSlip <= slip;
 
-   U_rst160MHz : entity work.RstPipeline
+   U_rst160MHz : entity surf.RstPipeline
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -106,7 +109,7 @@ begin
    -- Gearbox Module: Refer to "Figure 7-1: Serialization Order for Aurora 64B/66B Block Codes" for bit ordering
    -- https://www.xilinx.com/support/documentation/ip_documentation/aurora_64b66b_protocol_spec_sp011.pdf
    -------------------------------------------------------------------------------------------------------------
-   U_Gearbox_1280Mbps : entity work.Gearbox
+   U_Gearbox_1280Mbps : entity surf.Gearbox
       generic map (
          TPD_G          => TPD_G,
          SLAVE_WIDTH_G  => 8,
@@ -122,7 +125,7 @@ begin
          masterValid             => phyRxValidVec(0),
          masterReady             => '1');
 
-   U_Gearbox_640Mbps : entity work.Gearbox
+   U_Gearbox_640Mbps : entity surf.Gearbox
       generic map (
          TPD_G          => TPD_G,
          SLAVE_WIDTH_G  => 4,
@@ -141,7 +144,7 @@ begin
          masterValid             => phyRxValidVec(1),
          masterReady             => '1');
 
-   U_Gearbox_320Mbps : entity work.Gearbox
+   U_Gearbox_320Mbps : entity surf.Gearbox
       generic map (
          TPD_G          => TPD_G,
          SLAVE_WIDTH_G  => 2,
@@ -158,7 +161,7 @@ begin
          masterValid             => phyRxValidVec(2),
          masterReady             => '1');
 
-   U_Gearbox_160Mbps : entity work.Gearbox
+   U_Gearbox_160Mbps : entity surf.Gearbox
       generic map (
          TPD_G          => TPD_G,
          SLAVE_WIDTH_G  => 1,
@@ -204,7 +207,7 @@ begin
    ------------------
    -- Gearbox aligner
    ------------------
-   U_GearboxAligner : entity work.AuroraRxGearboxAligner
+   U_GearboxAligner : entity atlas_rd53_fw_lib.AuroraRxGearboxAligner
       generic map (
          TPD_G        => TPD_G,
          SIMULATION_G => SIMULATION_G)
@@ -228,7 +231,7 @@ begin
    -- Unscramble the data for 64b66b
    ---------------------------------
    unscramblerValid <= gearboxAligned and phyRxValid;
-   U_Descrambler : entity work.Scrambler
+   U_Descrambler : entity surf.Scrambler
       generic map (
          TPD_G            => TPD_G,
          DIRECTION_G      => "DESCRAMBLER",
@@ -249,7 +252,7 @@ begin
    rxData   <= bitReverse(data);
    rxHeader <= bitReverse(header);
 
-   U_Reset : entity work.SynchronizerOneShot
+   U_Reset : entity surf.SynchronizerOneShot
       generic map (
          TPD_G          => TPD_G,
          BYPASS_SYNC_G  => true,

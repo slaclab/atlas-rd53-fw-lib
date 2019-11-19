@@ -18,9 +18,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+
+library atlas_rd53_fw_lib;
 
 entity AuroraRxChannel is
    generic (
@@ -140,7 +143,7 @@ begin
 
    GEN_LANE : for i in 3 downto 0 generate
 
-      U_Rx : entity work.AuroraRxLane
+      U_Rx : entity atlas_rd53_fw_lib.AuroraRxLane
          generic map (
             TPD_G        => TPD_G,
             SIMULATION_G => SIMULATION_G)
@@ -177,7 +180,7 @@ begin
          end if;
       end process;
 
-      U_Fifo : entity work.Fifo
+      U_Fifo : entity surf.Fifo
          generic map (
             TPD_G           => TPD_G,
             GEN_SYNC_FIFO_G => true,
@@ -205,7 +208,7 @@ begin
 
    end generate GEN_LANE;
 
-   U_RdReg : entity work.AtlasRd53RdReg
+   U_RdReg : entity atlas_rd53_fw_lib.AtlasRd53RdReg
       generic map (
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => AXIS_CONFIG_G)

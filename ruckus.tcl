@@ -32,8 +32,8 @@ if { ${family} eq {kintexu} ||
 }
 
 # Load the source code
-loadSource -dir "$::DIR_PATH/rtl"
-loadSource -dir "$::DIR_PATH/rtl/${fpgaType}"
+loadSource -lib atlas_rd53_fw_lib -dir "$::DIR_PATH/rtl"
+loadSource -lib atlas_rd53_fw_lib -dir "$::DIR_PATH/rtl/${fpgaType}"
 
 # Adding the common Si5345 configuration
 add_files -norecurse "$::DIR_PATH/mem/Si5345-RevD-Registers-160MHz.mem"

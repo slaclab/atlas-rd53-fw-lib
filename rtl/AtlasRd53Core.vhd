@@ -18,10 +18,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+
+library atlas_rd53_fw_lib;
 
 entity AtlasRd53Core is
    generic (
@@ -124,7 +127,7 @@ begin
 
    localReset <= localRst or rst160MHz;
 
-   U_Rst : entity work.RstPipeline
+   U_Rst : entity surf.RstPipeline
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -135,7 +138,7 @@ begin
    -------------------------
    -- Control/Monitor Module
    -------------------------
-   U_Ctrl : entity work.AtlasRd53Ctrl
+   U_Ctrl : entity atlas_rd53_fw_lib.AtlasRd53Ctrl
       generic map (
          TPD_G        => TPD_G,
          SIMULATION_G => SIMULATION_G,
@@ -183,7 +186,7 @@ begin
    ------------------------
    -- CMD Generation Module
    ------------------------
-   U_Cmd : entity work.AtlasRd53TxCmdWrapper
+   U_Cmd : entity atlas_rd53_fw_lib.AtlasRd53TxCmdWrapper
       generic map (
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => AXIS_CONFIG_G,
@@ -210,7 +213,7 @@ begin
    ---------------
    -- RX PHY Layer
    ---------------
-   U_RxPhyLayer : entity work.AuroraRxChannel
+   U_RxPhyLayer : entity atlas_rd53_fw_lib.AuroraRxChannel
       generic map (
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => INT_AXIS_CONFIG_C,
@@ -251,7 +254,7 @@ begin
    -----------------------         
    -- Outbound Config FIFO
    -----------------------         
-   U_ConfigFifo : entity work.AxiStreamFifoV2
+   U_ConfigFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -280,7 +283,7 @@ begin
    ---------------------         
    -- Outbound Data FIFO
    ---------------------       
-   U_DataFifo : entity work.AxiStreamFifoV2
+   U_DataFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -309,7 +312,7 @@ begin
    ---------------------------------------------------------
    -- Batch Multiple 64-bit data words into large AXIS frame
    ---------------------------------------------------------
-   U_DataBatcher : entity work.AtlasRd53RxDataBatcher
+   U_DataBatcher : entity atlas_rd53_fw_lib.AtlasRd53RxDataBatcher
       generic map (
          TPD_G         => TPD_G,
          AXIS_CONFIG_G => INT_AXIS_CONFIG_C)
@@ -329,7 +332,7 @@ begin
    --------------------
    -- Resize/Burst FIFO
    --------------------
-   Burst_FIFO : entity work.AxiStreamFifoV2
+   Burst_FIFO : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
