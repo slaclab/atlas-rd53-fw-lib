@@ -53,6 +53,7 @@ entity AtlasRd53TxCmdWrapper is
       dlyCmd          : in  sl := '0';
       invCmd          : in  sl := '0';
       cmdOut          : out sl;
+      cmdBusy         : out sl;
       cmdOutP         : out sl;
       cmdOutN         : out sl);
 end entity AtlasRd53TxCmdWrapper;
@@ -69,6 +70,8 @@ architecture rtl of AtlasRd53TxCmdWrapper is
    signal configSlave  : AxiStreamSlaveType;
 
    signal slave : AxiStreamSlaveType;
+
+   signal fifoWrCnt : slv(8 downto 0);
 
    signal rdyL : sl;
 
@@ -167,11 +170,14 @@ begin
          sAxisRst    => rst160MHz,
          sAxisMaster => muxMaster,
          sAxisSlave  => muxSlave,
+         fifoWrCnt   => fifoWrCnt,
          -- Master Port
          mAxisClk    => clk160MHz,
          mAxisRst    => rst160MHz,
          mAxisMaster => cmdMaster,
          mAxisSlave  => cmdSlave);
+
+   cmdBusy <= '0' when (fifoWrCnt = 0) else '1';
 
    U_Cmd : entity atlas_rd53_fw_lib.AtlasRd53TxCmd
       generic map (

@@ -110,6 +110,7 @@ architecture mapping of AtlasRd53Core is
    signal doubleHdrDet : sl;
    signal singleHitDet : sl;
    signal doubleHitDet : sl;
+   signal cmdBusy      : sl;
 
    signal localRst    : sl;
    signal localReset  : sl;
@@ -157,9 +158,10 @@ begin
          singleHitDet    => singleHitDet,
          doubleHitDet    => doubleHitDet,
          dlyCfg          => dlyConfig,
-         linkUp          => linkUp,
          hdrErrDet       => hdrErrDet,
          bitSlip         => bitSlip,
+         linkUp          => linkUp,
+         cmdBusy         => cmdBusy,
          enable          => enable,
          selectRate      => selectRate,
          invData         => invData,
@@ -205,6 +207,7 @@ begin
          clk160MHz       => clk160MHz,
          rst160MHz       => reset160MHz,
          -- Command Serial Interface (clk160MHz domain)
+         cmdBusy         => cmdBusy,
          invCmd          => invCmd,
          dlyCmd          => dlyCmd,
          cmdOutP         => dPortCmdP,

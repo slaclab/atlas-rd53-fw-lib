@@ -148,7 +148,17 @@ class Ctrl(pr.Device):
             stride       = 4,
             pollInterval = pollInterval,
         )           
-                
+
+        self.add(pr.RemoteVariable(
+            name         = 'CmdBusyCnt',
+            description  = 'Increments when CMD FIFO is not empty event',
+            offset       = 0x050,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))
+
         self.add(pr.RemoteVariable(
             name         = 'LinkUp',
             description  = 'link up',
@@ -168,7 +178,17 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             pollInterval = pollInterval,
         ))        
-        
+
+        self.add(pr.RemoteVariable(
+            name         = 'CmdBusy',
+            description  = 'CMD FIFO is not empty',
+            offset       = 0x400,
+            bitSize      = 1,
+            bitOffset    = 20,
+            mode         = 'RO',
+            pollInterval = pollInterval,
+        ))
+
         self.addRemoteVariables(   
             name         = 'AutoRead',
             description  = 'RD53 auto-read register',

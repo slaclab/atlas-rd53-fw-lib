@@ -46,6 +46,7 @@ entity AtlasRd53Ctrl is
       hdrErrDet       : in  slv(3 downto 0);
       bitSlip         : in  slv(3 downto 0);
       linkUp          : in  slv(3 downto 0);
+      cmdBusy         : in  sl;
       enable          : out slv(3 downto 0);
       selectRate      : out slv(1 downto 0);
       invData         : out slv(3 downto 0);
@@ -72,7 +73,7 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant STATUS_SIZE_C  : positive := 20;
+   constant STATUS_SIZE_C  : positive := 21;
    constant STATUS_WIDTH_C : positive := 16;
 
    type RegType is record
@@ -365,6 +366,7 @@ begin
          WIDTH_G        => STATUS_SIZE_C)
       port map (
          -- Input Status bit Signals (wrClk domain)
+         statusIn(20)           => cmdBusy,
          statusIn(19 downto 16) => bitSlip,
          statusIn(15 downto 12) => hdrErrDet,
          statusIn(11)           => doubleHitDet,
