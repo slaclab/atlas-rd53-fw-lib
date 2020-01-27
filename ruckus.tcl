@@ -38,5 +38,5 @@ loadSource -lib atlas_rd53_fw_lib -dir "$::DIR_PATH/rtl/${fpgaType}"
 # Adding the common Si5345 configuration
 add_files -norecurse "$::DIR_PATH/mem/Si5345-RevD-Registers-160MHz.mem"
 
-# Load ruckus files
-loadRuckusTcl "$::DIR_PATH/sim"
+## Load ruckus files
+#loadRuckusTcl "$::DIR_PATH/sim"
