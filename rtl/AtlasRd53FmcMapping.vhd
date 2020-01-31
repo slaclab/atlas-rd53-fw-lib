@@ -56,6 +56,11 @@ entity AtlasRd53FmcMapping is
       -- I2C Interface
       i2cScl        : inout sl;
       i2cSda        : inout sl;
+      -- TLU Interface
+      tluInt        : out   sl;
+      tluRst        : out   sl;
+      tluBsy        : in    sl := '1';
+      tluTrgClk     : in    sl := '0';
       -- FMC LPC Ports
       fmcLaP        : inout slv(33 downto 0);
       fmcLaN        : inout slv(33 downto 0));
@@ -139,5 +144,32 @@ begin
 
    fmcLaP(25) <= i2cScl;
    fmcLaN(25) <= i2cSda;
+
+   U_tluInt : IBUFDS
+      port map (
+         I  => fmcLaP(26),
+         IB => fmcLaN(26),
+         O  => tluInt);
+
+   U_tluRst : IBUFDS
+      port map (
+         I  => fmcLaP(27),
+         IB => fmcLaN(27),
+         O  => tluRst);
+
+   U_tluBsy : OBUFDS
+      port map (
+         I  => tluBsy,
+         O  => fmcLaP(28),
+         OB => fmcLaN(28));
+
+   U_tluTrgClk : entity surf.ClkOutBufDiff
+      generic map (
+         TPD_G        => TPD_G,
+         XIL_DEVICE_G => XIL_DEVICE_G)
+      port map (
+         clkIn   => tluTrgClk,
+         clkOutP => fmcLaP(29),
+         clkOutN => fmcLaN(29));
 
 end mapping;
