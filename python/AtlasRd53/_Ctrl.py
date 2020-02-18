@@ -158,6 +158,26 @@ class Ctrl(pr.Device):
             disp         = '{:d}',
             pollInterval = pollInterval,
         ))
+        
+        self.add(pr.RemoteVariable(
+            name         = 'DownlinkUpCnt',
+            description  = 'Increments when lpGBT downlink is up event',
+            offset       = 0x054,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        )) 
+
+        self.add(pr.RemoteVariable(
+            name         = 'UplinkUpCnt',
+            description  = 'Increments when lpGBT uplink is up event',
+            offset       = 0x058,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))         
 
         self.add(pr.RemoteVariable(
             name         = 'LinkUp',
@@ -188,7 +208,27 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             pollInterval = pollInterval,
         ))
+        
+        self.add(pr.RemoteVariable(
+            name         = 'DownlinkUp',
+            description  = 'lpGBT Downlink Status',
+            offset       = 0x400,
+            bitSize      = 1,
+            bitOffset    = 21,
+            mode         = 'RO',
+            pollInterval = pollInterval,
+        ))
 
+        self.add(pr.RemoteVariable(
+            name         = 'UplinkUp',
+            description  = 'lpGBT Uplink Status',
+            offset       = 0x400,
+            bitSize      = 1,
+            bitOffset    = 22,
+            mode         = 'RO',
+            pollInterval = pollInterval,
+        ))        
+        
         self.addRemoteVariables(   
             name         = 'AutoRead',
             description  = 'RD53 auto-read register',
