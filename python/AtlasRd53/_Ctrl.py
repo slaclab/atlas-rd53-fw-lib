@@ -325,7 +325,7 @@ class Ctrl(pr.Device):
             name         = 'LockingCntCfg', 
             description  = 'Sets the number of good 2-bit headers required for locking per delay step sweep',
             offset       = 0x818,
-            bitSize      = 16, 
+            bitSize      = 24, 
             mode         = 'RW',
         ))          
         
