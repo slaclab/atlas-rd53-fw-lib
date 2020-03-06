@@ -162,6 +162,8 @@ begin
          bitSlip         => bitSlip,
          linkUp          => linkUp,
          cmdBusy         => cmdBusy,
+         downlinkReady   => '0',
+         uplinkReady     => '0',
          enable          => enable,
          selectRate      => selectRate,
          invData         => invData,
