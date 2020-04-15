@@ -5,11 +5,11 @@
 -- Description: Hit/Trig Module
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ begin
 
       -- State Machine
       case (r.state) is
-         ----------------------------------------------------------------------   
+         ----------------------------------------------------------------------
          when IDLE_S =>
             -- Reset the buses
             v.ramAddr := (others => '0');
@@ -181,13 +181,13 @@ begin
                   v.trigMaster.tData(31 downto 0) := ramData;
                   -- Check max ram address
                   if (r.ramAddr = r.maxAddr) then
-                     -- Reset the address bus 
+                     -- Reset the address bus
                      v.ramAddr          := (others => '0');
                      -- Terminate the frame
                      v.trigMaster.tLast := '1';
                      -- Check if max one-shot iteration count
                      if (r.loopCnt = r.iteration) then
-                        -- Reset the address bus 
+                        -- Reset the address bus
                         v.loopCnt := (others => '0');
                         -- Next state
                         v.state   := IDLE_S;

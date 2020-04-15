@@ -2,14 +2,14 @@
 -- File       : AtlasRd53RdReg.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Demux the auto-reg, RdReg and data paths 
+-- Description: Demux the auto-reg, RdReg and data paths
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ begin
 
       -- Loop through the lanes
       for i in 3 downto 0 loop
-         -- Check for valid and not Aurora data 
+         -- Check for valid and not Aurora data
          if (rxValid(i) = '1') and (rxLinkUp(i) = '1') and (rxHeader(i) = "10") then
             -- Both register fields are of type AutoRead
             if (opCode(i) = x"B4") then

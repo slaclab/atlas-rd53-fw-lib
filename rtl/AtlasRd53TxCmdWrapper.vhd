@@ -5,11 +5,11 @@
 -- Description: Wrapper for AtlasRd53TxCmd
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -99,9 +99,9 @@ begin
          dataIn  => rst160MHz,
          dataOut => rdyL);
 
-   -----------------------         
+   -----------------------
    -- Outbound Config FIFO
-   -----------------------         
+   -----------------------
    U_ConfigFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
@@ -199,7 +199,7 @@ begin
    cmdMask <= cmd xor invCmd;
 
    --------------------------
-   -- Generate a delayed copy 
+   -- Generate a delayed copy
    --------------------------
    process(clk160MHz)
    begin

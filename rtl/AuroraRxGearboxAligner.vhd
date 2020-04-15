@@ -5,11 +5,11 @@
 -- Description: Aligns the LVDS RX gearbox.
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -218,7 +218,7 @@ begin
                   v.goodCnt := r.goodCnt + 1;
                else
 
-                  -- Check if no bit errors detected yet during this IDELAY sweep 
+                  -- Check if no bit errors detected yet during this IDELAY sweep
                   if (r.firstError = '0') and (bypFirstBerDet = '0') then
                      -- Execute the slip procedure
                      slipProcedure;
@@ -255,7 +255,7 @@ begin
                   -- Execute the slip procedure
                   slipProcedure;
 
-               -- Check for not roll over and not 
+               -- Check for not roll over and not
                elsif (r.goodCnt < lockingCntCfg) and (v.hdrErrDet = '0') then
                   -- Increment the counter
                   v.goodCnt := r.goodCnt + 1;
@@ -313,7 +313,7 @@ begin
          v.dlyLoad(1) := '1';
       end if;
 
-      -- Outputs 
+      -- Outputs
       locked    <= r.locked;
       bitSlip   <= r.slip;
       dlyLoad   <= r.dlyLoad(0);

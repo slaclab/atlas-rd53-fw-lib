@@ -5,11 +5,11 @@
 -- Description: PLL and Deserialization
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ begin
             STARTUP_WAIT   => "FALSE",
             CLKIN_PERIOD   => 6.256,    -- 160 MHz
             DIVCLK_DIVIDE  => 2,
-            CLKFBOUT_MULT  => 16,       -- 1.28 GHz = 160 MHz x 16 / 2 
+            CLKFBOUT_MULT  => 16,       -- 1.28 GHz = 160 MHz x 16 / 2
             CLKOUT0_DIVIDE => 2,        -- 640 MHz = 1.28 GHz/2
             CLKOUT1_DIVIDE => 8)        -- 160 MHz = 1.28 GHz/8
          port map (
@@ -113,7 +113,7 @@ begin
    ------------------------------------------------------------------------------------------------------
    -- 160 MHz is the ISERDESE3/OSERDESE3's CLKDIV port
    -- Refer to "Figure 3-49: Sub-Optimal to Optimal Clocking Topologies for OSERDESE3" in UG949 (v2018.2)
-   -- https://www.xilinx.com/support/answers/67885.html   
+   -- https://www.xilinx.com/support/answers/67885.html
    ------------------------------------------------------------------------------------------------------
    U_Bufg160 : BUFGCE_DIV
       generic map (

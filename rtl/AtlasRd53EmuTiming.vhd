@@ -5,11 +5,11 @@
 -- Description: Hit/Trig Module
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -61,9 +61,9 @@ architecture mapping of AtlasRd53EmuTiming is
 
 begin
 
-   ---------------------------------------------       
+   ---------------------------------------------
    -- AXI-Lite: BRAM trigger bit Pattern storage
-   ---------------------------------------------       
+   ---------------------------------------------
    U_LUT : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
@@ -112,9 +112,9 @@ begin
          trigMaster      => emuTimingMaster,
          trigSlave       => emuTimingSlave);
 
-   ---------------------------------------------------         
+   ---------------------------------------------------
    -- Repeat the AXI stream to all RD53 CMD interfaces
-   ---------------------------------------------------         
+   ---------------------------------------------------
    U_Repeater : entity surf.AxiStreamRepeater
       generic map(
          TPD_G                => TPD_G,
