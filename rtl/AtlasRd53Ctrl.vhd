@@ -5,11 +5,11 @@
 -- Description: Control/Monitor Module
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ entity AtlasRd53Ctrl is
    generic (
       TPD_G        : time                  := 1 ns;
       SIMULATION_G : boolean               := false;
-      RX_MAPPING_G : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11"));  -- Set the default RX PHY lane mapping 
+      RX_MAPPING_G : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11"));  -- Set the default RX PHY lane mapping
    port (
       -- Monitoring Interface (clk160MHz domain)
       clk160MHz       : in  sl;
@@ -47,6 +47,7 @@ entity AtlasRd53Ctrl is
       bitSlip         : in  slv(3 downto 0);
       linkUp          : in  slv(3 downto 0);
       cmdBusy         : in  sl;
+      cmdBusyAll      : in  sl;
       downlinkReady   : in  sl;         -- lpGBT status
       uplinkReady     : in  sl;         -- lpGBT status
       enable          : out slv(3 downto 0);
@@ -75,7 +76,7 @@ end AtlasRd53Ctrl;
 
 architecture rtl of AtlasRd53Ctrl is
 
-   constant STATUS_SIZE_C  : positive := 23;
+   constant STATUS_SIZE_C  : positive := 24;
    constant STATUS_WIDTH_C : positive := 16;
 
    type RegType is record
@@ -368,6 +369,7 @@ begin
          WIDTH_G        => STATUS_SIZE_C)
       port map (
          -- Input Status bit Signals (wrClk domain)
+         statusIn(23)           => cmdBusyAll,
          statusIn(22)           => uplinkReady,    -- lpGBT status
          statusIn(21)           => downlinkReady,  -- lpGBT status
          statusIn(20)           => cmdBusy,
@@ -382,9 +384,9 @@ begin
          statusIn(5)            => configDrop,
          statusIn(4)            => chBond,
          statusIn(3 downto 0)   => linkUp,
-         -- Output Status bit Signals (rdClk domain)  
+         -- Output Status bit Signals (rdClk domain)
          statusOut              => statusOut,
-         -- Status Bit Counters Signals (rdClk domain) 
+         -- Status Bit Counters Signals (rdClk domain)
          cntRstIn               => r.cntRst,
          rollOverEnIn           => r.rollOverEn,
          cntOut                 => statusCnt,

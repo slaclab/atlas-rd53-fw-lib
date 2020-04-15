@@ -5,11 +5,11 @@
 -- Description: RX PHY Core module
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -32,10 +32,13 @@ entity AtlasRd53Core is
       AXIS_CONFIG_G : AxiStreamConfigType;
       VALID_THOLD_G : positive              := 128;  -- Hold until enough to burst into the interleaving MUX
       SIMULATION_G  : boolean               := false;
-      RX_MAPPING_G  : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping 
+      RX_MAPPING_G  : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11");  -- Set the default RX PHY lane mapping
       XIL_DEVICE_G  : string                := "7SERIES";
       SYNTH_MODE_G  : string                := "xpm");
    port (
+      -- CMD busy Flags
+      cmdBusyOut      : out sl;
+      cmdBusyAll      : in  sl;
       -- I/O Delay Interfaces
       pllRst          : out sl;
       -- AXI-Lite Interface (axilClk domain)
@@ -124,7 +127,8 @@ architecture mapping of AtlasRd53Core is
 
 begin
 
-   dlyCfg <= dlyConfig;
+   cmdBusyOut <= cmdBusy;
+   dlyCfg     <= dlyConfig;
 
    localReset <= localRst or rst160MHz;
 
@@ -162,6 +166,7 @@ begin
          bitSlip         => bitSlip,
          linkUp          => linkUp,
          cmdBusy         => cmdBusy,
+         cmdBusyAll      => cmdBusyAll,
          downlinkReady   => '0',
          uplinkReady     => '0',
          enable          => enable,
@@ -256,9 +261,9 @@ begin
          configMaster  => configMaster,
          autoReadReg   => autoReadReg);
 
-   -----------------------         
+   -----------------------
    -- Outbound Config FIFO
-   -----------------------         
+   -----------------------
    U_ConfigFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
@@ -285,9 +290,9 @@ begin
          mAxisMaster => mConfigMaster,
          mAxisSlave  => mConfigSlave);
 
-   ---------------------         
+   ---------------------
    -- Outbound Data FIFO
-   ---------------------       
+   ---------------------
    U_DataFifo : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations

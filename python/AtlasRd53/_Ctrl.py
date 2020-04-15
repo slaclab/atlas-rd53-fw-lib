@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# This file is part of the 'ATLAS RD53 FMC DEV'. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
-# of this distribution and at: 
-#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the 'ATLAS RD53 FMC DEV', including this file, may be 
-# copied, modified, propagated, or distributed except according to the terms 
+# This file is part of the 'ATLAS RD53 FMC DEV'. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the 'ATLAS RD53 FMC DEV', including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
 import pyrogue as pr
-        
+
 class Ctrl(pr.Device):
-    def __init__(   self,       
+    def __init__(   self,
             name        = "Ctrl",
             description = "Ctrl Container",
             pollInterval = 1,
             **kwargs):
-        super().__init__(name=name, description=description, **kwargs) 
+        super().__init__(name=name, description=description, **kwargs)
 
         statusCntBitSize = 16
 
-        self.addRemoteVariables(   
+        self.addRemoteVariables(
             name         = 'LinkUpCnt',
             description  = 'Status counter for link up',
             offset       = 0x000,
@@ -30,8 +30,8 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )        
-        
+        )
+
         self.add(pr.RemoteVariable(
             name         = 'ChBondCnt',
             description  = 'Status counter for channel bonding',
@@ -39,8 +39,8 @@ class Ctrl(pr.Device):
             bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))        
-                
+        ))
+
         self.add(pr.RemoteVariable(
             name         = 'ConfigDropCnt',
             description  = 'Increments when config dropped due to back pressure',
@@ -48,7 +48,7 @@ class Ctrl(pr.Device):
             bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))   
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'DataDropCnt',
@@ -57,7 +57,7 @@ class Ctrl(pr.Device):
             bitSize      = statusCntBitSize,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))  
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'SingleHdrDetCnt',
@@ -77,7 +77,7 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             disp         = '{:d}',
             pollInterval = pollInterval,
-        )) 
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'SingleHitDetCnt',
@@ -97,8 +97,8 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             disp         = '{:d}',
             pollInterval = pollInterval,
-        ))         
-        
+        ))
+
         self.add(pr.RemoteVariable(
             name         = 'WrdSentCnt',
             description  = 'Increments when 64-bit word sent to SW',
@@ -107,27 +107,27 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             disp         = '{:d}',
             pollInterval = pollInterval,
-        ))  
+        ))
 
         self.add(pr.LinkVariable(
-            name         = 'TotalHdrDetCnt', 
+            name         = 'TotalHdrDetCnt',
             description  = 'Increments when 64-bit word sent to SW has event header detected',
-            mode         = 'RO', 
+            mode         = 'RO',
             dependencies = [self.SingleHdrDetCnt,self.DoubleHdrDetCnt],
             linkedGet    = lambda: self.SingleHdrDetCnt.value() + 2*self.DoubleHdrDetCnt.value(),
             value        = 0,
-        ))   
+        ))
 
         self.add(pr.LinkVariable(
-            name         = 'TotalHitDetCnt', 
+            name         = 'TotalHitDetCnt',
             description  = 'Increments when 64-bit word sent to SW has hit data detected',
-            mode         = 'RO', 
+            mode         = 'RO',
             dependencies = [self.SingleHitDetCnt,self.DoubleHitDetCnt],
             linkedGet    = lambda: self.SingleHitDetCnt.value() + 2*self.DoubleHitDetCnt.value(),
             value        = 0,
-        ))           
-        
-        self.addRemoteVariables(   
+        ))
+
+        self.addRemoteVariables(
             name         = 'AuroraHdrErrDet',
             description  = 'Increments when the Aurora 2-bit header is not 10 or 01',
             offset       = 0x030,
@@ -136,9 +136,9 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )   
+        )
 
-        self.addRemoteVariables(   
+        self.addRemoteVariables(
             name         = 'GearBoxBitSlipCnt',
             description  = 'Increments whenever there is a gearbox bit slip executed',
             offset       = 0x040,
@@ -147,7 +147,7 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )           
+        )
 
         self.add(pr.RemoteVariable(
             name         = 'CmdBusyCnt',
@@ -158,7 +158,7 @@ class Ctrl(pr.Device):
             disp         = '{:d}',
             pollInterval = pollInterval,
         ))
-        
+
         self.add(pr.RemoteVariable(
             name         = 'DownlinkUpCnt',
             description  = 'Increments when lpGBT downlink is up event',
@@ -167,7 +167,7 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             disp         = '{:d}',
             pollInterval = pollInterval,
-        )) 
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'UplinkUpCnt',
@@ -177,27 +177,37 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             disp         = '{:d}',
             pollInterval = pollInterval,
-        ))         
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'CmdBusyAllCnt',
+            description  = 'Increments when CMD FIFO is not empty event for any mDP interface (OR-ing all the CMD busy together external of AtlasRd53Core.vhd)',
+            offset       = 0x05C,
+            bitSize      = statusCntBitSize,
+            mode         = 'RO',
+            disp         = '{:d}',
+            pollInterval = pollInterval,
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'LinkUp',
             description  = 'link up',
             offset       = 0x400,
-            bitSize      = 4, 
+            bitSize      = 4,
             bitOffset    = 0,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))         
-        
+        ))
+
         self.add(pr.RemoteVariable(
             name         = 'ChBond',
             description  = 'channel bonding',
             offset       = 0x400,
-            bitSize      = 1, 
+            bitSize      = 1,
             bitOffset    = 4,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))        
+        ))
 
         self.add(pr.RemoteVariable(
             name         = 'CmdBusy',
@@ -208,7 +218,7 @@ class Ctrl(pr.Device):
             mode         = 'RO',
             pollInterval = pollInterval,
         ))
-        
+
         self.add(pr.RemoteVariable(
             name         = 'DownlinkUp',
             description  = 'lpGBT Downlink Status',
@@ -227,9 +237,19 @@ class Ctrl(pr.Device):
             bitOffset    = 22,
             mode         = 'RO',
             pollInterval = pollInterval,
-        ))        
-        
-        self.addRemoteVariables(   
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'CmdBusyAll',
+            description  = 'CMD FIFO is not empty event for any mDP interface (OR-ing all the CMD busy together external of AtlasRd53Core.vhd)',
+            offset       = 0x400,
+            bitSize      = 1,
+            bitOffset    = 23,
+            mode         = 'RO',
+            pollInterval = pollInterval,
+        ))
+
+        self.addRemoteVariables(
             name         = 'AutoRead',
             description  = 'RD53 auto-read register',
             offset       = 0x410,
@@ -238,9 +258,9 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )     
+        )
 
-        self.addRemoteVariables(   
+        self.addRemoteVariables(
             name         = 'RxDelayTap',
             description  = 'RX IDELAY tap configuration (Note: For 7-series FPGAs the 5-bit config is mapped like dlyCfg(8 downto 4) to the most significant bits)',
             offset       = 0x420,
@@ -249,87 +269,87 @@ class Ctrl(pr.Device):
             number       = 4,
             stride       = 4,
             pollInterval = pollInterval,
-        )             
-        
-        self.add(pr.RemoteVariable(
-            name         = 'EnLane', 
-            description  = 'Enable Lane Mask',
-            offset       = 0x800,
-            bitSize      = 4, 
-            mode         = 'RW',
-        )) 
+        )
 
         self.add(pr.RemoteVariable(
-            name         = 'InvData', 
-            description  = 'Invert the serial data bits',
-            offset       = 0x804,
-            bitSize      = 4, 
+            name         = 'EnLane',
+            description  = 'Enable Lane Mask',
+            offset       = 0x800,
+            bitSize      = 4,
             mode         = 'RW',
         ))
 
         self.add(pr.RemoteVariable(
-            name         = 'InvCmd', 
-            description  = 'Invert the serial CMD bit',
-            offset       = 0x808,
-            bitSize      = 1, 
-            bitOffset    = 0,
+            name         = 'InvData',
+            description  = 'Invert the serial data bits',
+            offset       = 0x804,
+            bitSize      = 4,
             mode         = 'RW',
-        )) 
+        ))
 
         self.add(pr.RemoteVariable(
-            name         = 'DlyCmd', 
+            name         = 'InvCmd',
+            description  = 'Invert the serial CMD bit',
+            offset       = 0x808,
+            bitSize      = 1,
+            bitOffset    = 0,
+            mode         = 'RW',
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'DlyCmd',
             description  = '0x1: add 3.125 ns delay on the CMD output (used to deskew the CMD from discrete re-timing flip-flop IC)',
             offset       = 0x808,
-            bitSize      = 1, 
+            bitSize      = 1,
             bitOffset    = 1,
             mode         = 'RW',
             units        = '3.125 ns',
-        ))         
-        
+        ))
+
         for i in range(4):
             self.add(pr.RemoteVariable(
-                name         = ('RxPhyXbar[%d]'%i), 
+                name         = ('RxPhyXbar[%d]'%i),
                 description  = 'RD53 Lane 4:4 lane crossbar configuration',
                 offset       = 0x80C,
                 bitOffset    = (2*i),
-                bitSize      = 2, 
+                bitSize      = 2,
                 mode         = 'RW',
-            )) 
+            ))
 
         self.add(pr.RemoteVariable(
-            name         = 'SelectRate', 
+            name         = 'SelectRate',
             description  = 'SelectRate and RD53.SEL_SER_CLK[2:0] must be the same (default of 0x0 = 1.28Gbps)',
             offset       = 0x80C,
-            bitSize      = 2, 
+            bitSize      = 2,
             bitOffset    = 8,
             mode         = 'RW',
-        ))               
-        
-        self.add(pr.RemoteVariable(
-            name         = 'DebugStream', 
-            description  = 'Enables the interleaving of autoreg and read responses into the dataStream path',
-            offset       = 0x810,
-            bitSize      = 1, 
-            mode         = 'RW',
-        ))   
+        ))
 
         self.add(pr.RemoteVariable(
-            name         = 'EnUsrDlyCfg', 
+            name         = 'DebugStream',
+            description  = 'Enables the interleaving of autoreg and read responses into the dataStream path',
+            offset       = 0x810,
+            bitSize      = 1,
+            mode         = 'RW',
+        ))
+
+        self.add(pr.RemoteVariable(
+            name         = 'EnUsrDlyCfg',
             description  = 'Enables the User to override the automatic RX IDELAY tap configuration (Note: For 7-series FPGAs the 5-bit config is mapped like dlyCfg(8 downto 4) to the most significant bits)',
             offset       = 0x814,
-            bitSize      = 1, 
+            bitSize      = 1,
             mode         = 'RW',
-        ))  
-        
+        ))
+
         self.add(pr.RemoteVariable(
-            name         = 'LockingCntCfg', 
+            name         = 'LockingCntCfg',
             description  = 'Sets the number of good 2-bit headers required for locking per delay step sweep',
             offset       = 0x818,
-            bitSize      = 24, 
+            bitSize      = 24,
             mode         = 'RW',
-        ))          
-        
-        self.addRemoteVariables(   
+        ))
+
+        self.addRemoteVariables(
             name         = 'UserRxDelayTap',
             description  = 'Sets the RX IDELAY tap configuration (A.K.A. RxDelayTap) when EnUsrDlyCfg = 0x1',
             offset       = 0x820,
@@ -337,9 +357,9 @@ class Ctrl(pr.Device):
             mode         = 'RW',
             number       = 4,
             stride       = 4,
-        )   
-        
-        self.addRemoteVariables(   
+        )
+
+        self.addRemoteVariables(
             name         = 'MinEyeWidth',
             description  = 'Sets the min. eye width in the RX IDELAY eye scan',
             offset       = 0x830,
@@ -347,31 +367,31 @@ class Ctrl(pr.Device):
             mode         = 'RW',
             number       = 4,
             stride       = 4,
-        )           
-        
+        )
+
         self.add(pr.RemoteVariable(
-            name         = 'BatchSize', 
+            name         = 'BatchSize',
             description  = 'Number of 64-bit (8 bytes) words to batch together into a AXIS frame',
             offset       = 0xFF0,
-            bitSize      = 16, 
+            bitSize      = 16,
             bitOffset    = 0,
             mode         = 'RW',
             units        = '8Bytes',
             base         = pr.UInt,
-        ))  
+        ))
 
         self.add(pr.RemoteVariable(
-            name         = 'TimerConfig', 
+            name         = 'TimerConfig',
             description  = 'Batcher timer configuration',
             offset       = 0xFF0,
-            bitSize      = 16, 
+            bitSize      = 16,
             bitOffset    = 16,
             mode         = 'RW',
             units        = '6.4ns',
             base         = pr.UInt,
-        ))   
-        
-        self.add(pr.RemoteCommand(   
+        ))
+
+        self.add(pr.RemoteCommand(
             name         = 'PllRst',
             description  = 'FPGA Internal PLL reset',
             offset       = 0xFF4,
@@ -392,21 +412,21 @@ class Ctrl(pr.Device):
         ))
 
         self.add(pr.RemoteVariable(
-            name         = 'RollOverEn', 
+            name         = 'RollOverEn',
             description  = 'Rollover enable for status counters',
             offset       = 0xFF8,
-            bitSize      = 7, 
+            bitSize      = 7,
             mode         = 'RW',
-        ))        
-        
-        self.add(pr.RemoteCommand(   
+        ))
+
+        self.add(pr.RemoteCommand(
             name         = 'CntRst',
             description  = 'Status counter reset',
             offset       = 0xFFC,
             bitSize      = 1,
             function     = lambda cmd: cmd.post(1),
             hidden       = False,
-        ))  
+        ))
 
     def hardReset(self):
         self.CntRst()
@@ -416,4 +436,4 @@ class Ctrl(pr.Device):
 
     def countReset(self):
         self.CntRst()
-     
+
