@@ -1,7 +1,7 @@
 # Load RUCKUS environment and library
 source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
-# # Load target's source code and constraints
+# # Load target's source code and constraints 
 # loadSource -sim_only -fileType SystemVerilog   -path "$::DIR_PATH/tb/Rd53aWrapper.sv"
 # loadSource -sim_only -fileType SystemVerilog   -path "$::DIR_PATH/RD53A_SIM_DAQ/example_tb.sv"
 # loadSource -sim_only -fileType {Verilog Header} -dir "$::DIR_PATH/RD53A_SIM_DAQ/"
