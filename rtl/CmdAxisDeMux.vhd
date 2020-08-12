@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Wrapper on the AxiStreamDeMux that provides a method for a 
+-- Description: Wrapper on the AxiStreamDeMux that provides a method for a
 --              "global" command on TDEST = NUM_MASTERS_G
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ begin
          -- Clock and reset
          axisClk      => axisClk,
          axisRst      => axisRst,
-         -- Slave         
+         -- Slave
          sAxisMaster  => sAxisMaster,
          sAxisSlave   => sAxisSlave,
          -- Masters

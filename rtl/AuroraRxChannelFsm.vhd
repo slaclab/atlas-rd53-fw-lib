@@ -5,11 +5,11 @@
 -- Description: Wrapper for AuroraRxLane
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -128,7 +128,7 @@ begin
       v.doubleHitDet      := '0';
 
       -- Create 8-frame packets before the batcher
-      v.dataMaster.tUser(SSI_SOF_C) := '1';  -- SOF   
+      v.dataMaster.tUser(SSI_SOF_C) := '1';  -- SOF
       v.dataMaster.tLast            := '1';  -- EOF
 
       -- Shirt Register
@@ -164,7 +164,7 @@ begin
             v.cnt    := 0;
             -- Check for de-asserted reset
             if (r.fifoRst = 0) then
-               -- Check if aligned 
+               -- Check if aligned
                if (v.aligned = x"F") then
                   -- Accept the data
                   v.rdEn  := x"F";

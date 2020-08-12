@@ -10,7 +10,7 @@ if { [info exists ::env(OVERRIDE_SUBMODULE_LOCKS)] != 1 || $::env(OVERRIDE_SUBMO
    puts "OVERRIDE_SUBMODULE_LOCKS != 0"
    puts "Ignoring the submodule locks in atlas-rd53-fw-lib/ruckus.tcl"
    puts "*********************************************************\n\n"
-}   
+}
 
 # Get the family type
 set family [getFpgaFamily]

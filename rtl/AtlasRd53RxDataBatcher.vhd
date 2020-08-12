@@ -5,11 +5,11 @@
 -- Description: Batch Multiple 64-bit data words into large AXIS frame
 -------------------------------------------------------------------------------
 -- This file is part of 'ATLAS RD53 DEV'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'ATLAS RD53 DEV', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'ATLAS RD53 DEV', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -127,7 +127,7 @@ begin
                v.mDataMasters(1).tUser  := (others => '0');
 
                -- Set Start of Frame (SOF) flag
-               v.mDataMasters(1).tUser(SSI_SOF_C) := '1';  -- SOF  
+               v.mDataMasters(1).tUser(SSI_SOF_C) := '1';  -- SOF
 
                -- Check for min. batch size
                if (batchSize = 0) then
@@ -168,7 +168,7 @@ begin
             -- Check if ready to move data
             elsif (sDataMaster.tValid = '1') and (v.mDataMasters(0).tValid = '0') then
 
-               -- Accept the data 
+               -- Accept the data
                v.sDataSlave.tready := '1';
 
                -- Move the data
