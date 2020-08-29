@@ -28,6 +28,7 @@ entity AtlasRd53Ctrl is
    generic (
       TPD_G        : time                  := 1 ns;
       SIMULATION_G : boolean               := false;
+      EN_RX_G      : boolean               := true;
       RX_MAPPING_G : Slv2Array(3 downto 0) := (0 => "00", 1 => "01", 2 => "10", 3 => "11"));  -- Set the default RX PHY lane mapping
    port (
       -- Monitoring Interface (clk160MHz domain)
@@ -170,6 +171,13 @@ begin
       axiSlaveRegisterR(axilEp, x"424", 0, dlyConfig(1));
       axiSlaveRegisterR(axilEp, x"428", 0, dlyConfig(2));
       axiSlaveRegisterR(axilEp, x"42C", 0, dlyConfig(3));
+
+      axiSlaveRegisterR(axilEp, x"430", 0, RX_MAPPING_G(0));
+      axiSlaveRegisterR(axilEp, x"430", 2, RX_MAPPING_G(1));
+      axiSlaveRegisterR(axilEp, x"430", 4, RX_MAPPING_G(2));
+      axiSlaveRegisterR(axilEp, x"430", 6, RX_MAPPING_G(3));
+      axiSlaveRegisterR(axilEp, x"430", 8, ite(EN_RX_G, '1', '0'));
+      axiSlaveRegisterR(axilEp, x"430", 9, ite(SIMULATION_G, '1', '0'));
 
       axiSlaveRegister (axilEp, x"800", 0, v.enable);
       axiSlaveRegister (axilEp, x"804", 0, v.invData);

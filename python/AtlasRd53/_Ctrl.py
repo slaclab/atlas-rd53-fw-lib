@@ -271,6 +271,31 @@ class Ctrl(pr.Device):
             pollInterval = pollInterval,
         )
 
+        for i in range(4):
+            self.add(pr.RemoteVariable(
+                name      = f'RX_MAPPING_G[{i}]',
+                offset    = 0x430,
+                bitSize   = 2,
+                bitOffset = 2*i,
+                mode      = 'RO',
+            ))
+
+        self.add(pr.RemoteVariable(
+            name      = 'EN_RX_G',
+            offset    = 0x430,
+            bitSize   = 1,
+            bitOffset = 8,
+            mode      = 'RO',
+        ))
+
+        self.add(pr.RemoteVariable(
+            name      = 'SIMULATION_G',
+            offset    = 0x430,
+            bitSize   = 1,
+            bitOffset = 9,
+            mode      = 'RO',
+        ))
+
         self.add(pr.RemoteVariable(
             name         = 'EnLane',
             description  = 'Enable Lane Mask',

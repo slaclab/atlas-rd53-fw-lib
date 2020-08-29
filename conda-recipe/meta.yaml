@@ -1,4 +1,4 @@
-package: 
+package:
   name: atlas_rd53_fw_lib
   version: {{ GIT_DESCRIBE_TAG }}
 
