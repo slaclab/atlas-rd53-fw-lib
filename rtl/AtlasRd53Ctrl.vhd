@@ -54,6 +54,7 @@ entity AtlasRd53Ctrl is
       selectRate      : out slv(1 downto 0);
       invData         : out slv(3 downto 0);
       invCmd          : out sl;
+      cmdMode         : out slv(1 downto 0);
       dlyCmd          : out sl;
       rxPhyXbar       : out Slv2Array(3 downto 0);
       enUsrDlyCfg     : out sl;
@@ -93,6 +94,7 @@ architecture rtl of AtlasRd53Ctrl is
       selectRate     : slv(1 downto 0);
       invData        : slv(3 downto 0);
       invCmd         : sl;
+      cmdMode        : slv(1 downto 0);
       dlyCmd         : sl;
       cntRst         : sl;
       rollOverEn     : slv(STATUS_SIZE_C-1 downto 0);
@@ -116,6 +118,7 @@ architecture rtl of AtlasRd53Ctrl is
       -- selectRate     => (others => '1'),  -- Default to 160 Mb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
+      cmdMode        => "11",
       dlyCmd         => '0',
       cntRst         => '1',
       rollOverEn     => (others => '0'),
@@ -172,6 +175,7 @@ begin
       axiSlaveRegister (axilEp, x"804", 0, v.invData);
       axiSlaveRegister (axilEp, x"808", 0, v.invCmd);
       axiSlaveRegister (axilEp, x"808", 1, v.dlyCmd);
+      axiSlaveRegister (axilEp, x"808", 2, v.cmdMode);
 
       axiSlaveRegister (axilEp, x"80C", 0, v.rxPhyXbar(0));
       axiSlaveRegister (axilEp, x"80C", 2, v.rxPhyXbar(1));
@@ -271,6 +275,15 @@ begin
          clk     => clk160MHz,
          dataIn  => r.invCmd,
          dataOut => invCmd);
+   U_cmdMode : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 2)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.cmdMode,
+         dataOut => cmdMode);
+
 
    U_dlyCmd : entity surf.Synchronizer
       generic map (
