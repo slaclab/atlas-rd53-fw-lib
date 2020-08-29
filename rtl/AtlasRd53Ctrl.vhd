@@ -119,7 +119,7 @@ architecture rtl of AtlasRd53Ctrl is
       -- selectRate     => (others => '1'),  -- Default to 160 Mb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
-      cmdMode        => "11",
+      cmdMode        => "00",
       dlyCmd         => '0',
       cntRst         => '1',
       rollOverEn     => (others => '0'),
