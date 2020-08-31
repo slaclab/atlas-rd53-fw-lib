@@ -107,6 +107,7 @@ architecture mapping of AtlasRd53Core is
    signal invData      : slv(3 downto 0)        := (others => '0');
    signal invCmd       : sl                     := '0';
    signal dlyCmd       : sl                     := '0';
+   signal cmdMode      : slv(1 downto 0)        := (others => '0');
    signal batchSize    : slv(15 downto 0)       := (others => '0');
    signal timerConfig  : slv(15 downto 0)       := (others => '0');
    signal wrdSent      : sl                     := '0';
@@ -175,6 +176,7 @@ begin
          selectRate      => selectRate,
          invData         => invData,
          invCmd          => invCmd,
+         cmdMode         => cmdMode,
          dlyCmd          => dlyCmd,
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
@@ -218,6 +220,7 @@ begin
          -- Command Serial Interface (clk160MHz domain)
          cmdBusy         => cmdBusy,
          invCmd          => invCmd,
+         cmdMode         => cmdMode,
          dlyCmd          => dlyCmd,
          cmdOutP         => dPortCmdP,
          cmdOutN         => dPortCmdN);

@@ -52,6 +52,7 @@ entity AtlasRd53TxCmdWrapper is
       -- Command Serial Interface (clk160MHz domain)
       dlyCmd          : in  sl := '0';
       invCmd          : in  sl := '0';
+      cmdMode         : in slv(1 downto 0):="00";
       cmdOut          : out sl;
       cmdBusy         : out sl;
       cmdOutP         : out sl;
@@ -183,6 +184,7 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
+         cmdMode     => cmdMode,
          -- Clock and Reset
          clkEn160MHz => clkEn160MHz,
          clk160MHz   => clk160MHz,
