@@ -283,6 +283,7 @@ begin
          clk     => clk160MHz,
          dataIn  => r.invCmd,
          dataOut => invCmd);
+
    U_cmdMode : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,

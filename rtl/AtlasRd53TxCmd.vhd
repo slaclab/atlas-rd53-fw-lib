@@ -29,7 +29,7 @@ entity AtlasRd53TxCmd is
       TPD_G : time := 1 ns);
    port (
       -- CMD mode: 00 normal; 01: 010101010101; 10: constant 1; 11 constant 0
-      cmdMode : in slv(1 downto 0):="00";
+      cmdMode     : in  slv(1 downto 0) := "00";
       -- Clock and Reset
       clkEn160MHz : in  sl;
       clk160MHz   : in  sl;
@@ -43,15 +43,15 @@ end AtlasRd53TxCmd;
 
 architecture rtl of AtlasRd53TxCmd is
 
-   constant NOP_C       : slv(15 downto 0) := b"0110_1001_0110_1001";
-   constant NOP_DWORD_C : slv(31 downto 0) := (NOP_C & NOP_C);
-   constant SYNC_C      : slv(15 downto 0) := b"1000_0001_0111_1110";
+   constant NOP_C         : slv(15 downto 0) := b"0110_1001_0110_1001";
+   constant NOP_DWORD_C   : slv(31 downto 0) := (NOP_C & NOP_C);
+   constant SYNC_C        : slv(15 downto 0) := b"1000_0001_0111_1110";
    constant TRAIN_C       : slv(15 downto 0) := b"0101_0101_0101_0101";
    constant TRAIN_DWORD_C : slv(31 downto 0) := (TRAIN_C & TRAIN_C);
-   constant All0_C       : slv(15 downto 0) := b"0000_0000_0000_0000";
-   constant All0_DWORD_C : slv(31 downto 0) := (All0_C & All0_C);
-   constant All1_C       : slv(15 downto 0) := b"1111_1111_1111_1111";
-   constant All1_DWORD_C : slv(31 downto 0) := (All1_C & All1_C);
+   constant All0_C        : slv(15 downto 0) := b"0000_0000_0000_0000";
+   constant All0_DWORD_C  : slv(31 downto 0) := (All0_C & All0_C);
+   constant All1_C        : slv(15 downto 0) := b"1111_1111_1111_1111";
+   constant All1_DWORD_C  : slv(31 downto 0) := (All1_C & All1_C);
 
    type StateType is (
       INIT_S,
@@ -82,7 +82,7 @@ architecture rtl of AtlasRd53TxCmd is
 
 begin
 
-   comb : process (clkEn160MHz, cmdMaster, r, rst160MHz, cmdMode) is
+   comb : process (clkEn160MHz, cmdMaster, cmdMode, r, rst160MHz) is
       variable v : RegType;
    begin
       -- Latch the current value
@@ -97,14 +97,14 @@ begin
          -- Update the shift register
          --v.shiftReg := r.shiftReg(30 downto 0) & '0';
          case cmdMode is
-             when "00"=>
-                 v.shiftReg := r.shiftReg(30 downto 0) & '0';
-             when "01"=>
-                 v.shiftReg := r.shiftReg(30 downto 0) & '0';
-             when "10"=>
-                 v.shiftReg := (others => '1');
-             when "11"=>
-                 v.shiftReg := (others => '0');
+            when "00"=>
+               v.shiftReg := r.shiftReg(30 downto 0) & '0';
+            when "01"=>
+               v.shiftReg := r.shiftReg(30 downto 0) & '0';
+            when "10"=>
+               v.shiftReg := (others => '1');
+            when "11"=>
+               v.shiftReg := (others => '0');
          end case;
 
          -- Increment the counter
@@ -116,14 +116,14 @@ begin
             -- Default shift reg update value
             --v.shiftReg := NOP_DWORD_C;
             case cmdMode is
-                when "00"=>
-                    v.shiftReg := NOP_DWORD_C;
-                when "01"=>
-                    v.shiftReg := TRAIN_DWORD_C;
-                when "10"=>
-                    v.shiftReg := All1_DWORD_C;
-                when "11"=>
-                    v.shiftReg := All0_DWORD_C;
+               when "00"=>
+                  v.shiftReg := NOP_DWORD_C;
+               when "01"=>
+                  v.shiftReg := TRAIN_DWORD_C;
+               when "10"=>
+                  v.shiftReg := All1_DWORD_C;
+               when "11"=>
+                  v.shiftReg := All0_DWORD_C;
             end case;
             -- State Machine
             case r.state is
@@ -147,20 +147,20 @@ begin
                      --v.shiftReg        := cmdMaster.tData(31 downto 0);
 
                      case cmdMode is
-                         when "00"=>
-                             v.shiftReg := cmdMaster.tData(31 downto 0);
-                         when "01"=>
-                             v.shiftReg := TRAIN_DWORD_C;
-                         when "10"=>
-                             v.shiftReg := All1_DWORD_C;
-                         when "11"=>
-                             v.shiftReg := All0_DWORD_C;
+                        when "00"=>
+                           v.shiftReg := cmdMaster.tData(31 downto 0);
+                        when "01"=>
+                           v.shiftReg := TRAIN_DWORD_C;
+                        when "10"=>
+                           v.shiftReg := All1_DWORD_C;
+                        when "11"=>
+                           v.shiftReg := All0_DWORD_C;
                      end case;
 
 
 
                      -- Sample for simulation debugging
-                     v.tData           := cmdMaster.tData(31 downto 0);
+                     v.tData := cmdMaster.tData(31 downto 0);
                   end if;
             ----------------------------------------------------------------------
             end case;

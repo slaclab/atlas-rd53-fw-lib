@@ -46,13 +46,13 @@ entity AtlasRd53TxCmdWrapper is
       sConfigMaster   : in  AxiStreamMasterType;
       sConfigSlave    : out AxiStreamSlaveType;
       -- Timing Interface
-      clkEn160MHz     : in  sl := '1';
+      clkEn160MHz     : in  sl              := '1';
       clk160MHz       : in  sl;
       rst160MHz       : in  sl;
       -- Command Serial Interface (clk160MHz domain)
-      dlyCmd          : in  sl := '0';
-      invCmd          : in  sl := '0';
-      cmdMode         : in slv(1 downto 0):="00";
+      dlyCmd          : in  sl              := '0';
+      invCmd          : in  sl              := '0';
+      cmdMode         : in  slv(1 downto 0) := "00";
       cmdOut          : out sl;
       cmdBusy         : out sl;
       cmdOutP         : out sl;
