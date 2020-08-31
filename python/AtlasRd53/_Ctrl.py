@@ -331,6 +331,20 @@ class Ctrl(pr.Device):
             units        = '3.125 ns',
         ))
 
+        self.add(pr.RemoteVariable(
+            name         = 'CmdMode',
+            offset       = 0x808,
+            bitSize      = 2,
+            bitOffset    = 2,
+            mode         = 'RW',
+            enum        = {
+                0x0: 'NormalMode',
+                0x1: 'TrainingPattern',
+                0x2: 'Ones',
+                0x3: 'Zeros',
+            },
+        ))
+
         for i in range(4):
             self.add(pr.RemoteVariable(
                 name         = ('RxPhyXbar[%d]'%i),
