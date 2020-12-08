@@ -12,11 +12,11 @@
 import pyrogue as pr
 
 class EmuTimingLut(pr.Device):
-    def __init__(   self,
-        name        = "EmuTimingLut",
-        description = "Container for EmuTiming LUT",
-        ADDR_WIDTH_G = 10,
-        **kwargs):
+    def __init__( self,
+                  name        = "EmuTimingLut",
+                  description = "Container for EmuTiming LUT",
+                  ADDR_WIDTH_G = 10,
+                  **kwargs):
 
         super().__init__(name=name,description=description,**kwargs)
 
@@ -32,11 +32,11 @@ class EmuTimingLut(pr.Device):
         )
 
 class EmuTimingFsm(pr.Device):
-    def __init__(   self,
-        name        = "EmuTimingFsm",
-        description = "Container for EmuTiming FSM registers",
-        ADDR_WIDTH_G = 10,
-        **kwargs):
+    def __init__( self,
+                  name        = "EmuTimingFsm",
+                  description = "Container for EmuTiming FSM registers",
+                  ADDR_WIDTH_G = 10,
+                  **kwargs):
 
         super().__init__(name=name,description=description,**kwargs)
 

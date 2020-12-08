@@ -475,4 +475,3 @@ class Ctrl(pr.Device):
 
     def countReset(self):
         self.CntRst()
-
