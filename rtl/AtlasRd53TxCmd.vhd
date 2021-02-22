@@ -95,7 +95,6 @@ begin
       if (clkEn160MHz = '1') then
 
          -- Update the shift register
-         --v.shiftReg := r.shiftReg(30 downto 0) & '0';
          case cmdMode is
             when "00"=>
                v.shiftReg := r.shiftReg(30 downto 0) & '0';
@@ -114,7 +113,6 @@ begin
          if (r.shiftCnt = "11111") then
 
             -- Default shift reg update value
-            --v.shiftReg := NOP_DWORD_C;
             case cmdMode is
                when "00"=>
                   v.shiftReg := NOP_DWORD_C;
@@ -125,6 +123,7 @@ begin
                when "11"=>
                   v.shiftReg := All0_DWORD_C;
             end case;
+
             -- State Machine
             case r.state is
                ----------------------------------------------------------------------
@@ -141,11 +140,11 @@ begin
                when LISTEN_S =>
                   -- Check for streaming data
                   if (cmdMaster.tValid = '1') then
+
                      -- Accept the data
                      v.cmdSlave.tReady := '1';
-                     -- Move the data (only 32-bit data from the software)
-                     --v.shiftReg        := cmdMaster.tData(31 downto 0);
 
+                     -- Move the data (only 32-bit data from the software)
                      case cmdMode is
                         when "00"=>
                            v.shiftReg := cmdMaster.tData(31 downto 0);
@@ -157,10 +156,9 @@ begin
                            v.shiftReg := All0_DWORD_C;
                      end case;
 
-
-
                      -- Sample for simulation debugging
                      v.tData := cmdMaster.tData(31 downto 0);
+
                   end if;
             ----------------------------------------------------------------------
             end case;
