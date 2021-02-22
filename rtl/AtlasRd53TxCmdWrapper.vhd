@@ -158,7 +158,6 @@ begin
          VALID_BURST_MODE_G  => true,   -- bursting mode enabled
          -- FIFO configurations
          SYNTH_MODE_G        => SYNTH_MODE_G,
-         -- MEMORY_TYPE_G       => MEMORY_TYPE_G,
          MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
          FIFO_ADDR_WIDTH_G   => 9,
