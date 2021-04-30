@@ -17,6 +17,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+USE ieee.numeric_std.ALL;
 
 library surf;
 use surf.StdRtlPkg.all;
@@ -28,6 +29,12 @@ entity AtlasRd53TxCmd is
    generic (
       TPD_G : time := 1 ns);
    port (
+      -- Cmd Value
+      NOP_C       : in slv(15 downto 0) := b"0110_1001_0110_1001";
+      SYNC_C      : in slv(15 downto 0) := b"1000_0001_0111_1110";
+      SYNC_freq   : in slv(15 downto 0) := b"0000_0000_0010_0000";
+      GPulse_C    : in slv(15 downto 0) := b"0101_1100_0101_1100";
+      GPulse_freq : in slv(15 downto 0) := b"0000_0000_0000_0000";
       -- CMD mode: 00 normal; 01: 010101010101; 10: constant 1; 11 constant 0
       cmdMode     : in  slv(1 downto 0) := "00";
       -- Clock and Reset
@@ -43,9 +50,11 @@ end AtlasRd53TxCmd;
 
 architecture rtl of AtlasRd53TxCmd is
 
-   constant NOP_C         : slv(15 downto 0) := b"0110_1001_0110_1001";
-   constant NOP_DWORD_C   : slv(31 downto 0) := (NOP_C & NOP_C);
-   constant SYNC_C        : slv(15 downto 0) := b"1000_0001_0111_1110";
+   signal SYNC_C_reg        : slv(15 downto 0) := b"1000_0001_0111_1110";
+   signal SYNC_freq_reg     : slv(15 downto 0) := b"0000_0000_0010_0000";
+   signal GPulse_C_reg      : slv(15 downto 0) := b"0101_1100_0101_1100";
+   signal GPulse_freq_reg   : slv(15 downto 0) := b"0000_0000_0000_0000";
+   signal NOP_DWORD_C_reg   : slv(31 downto 0) := b"0101_0101_0101_0101_0101_0101_0101_0101";
    constant TRAIN_C       : slv(15 downto 0) := b"0101_0101_0101_0101";
    constant TRAIN_DWORD_C : slv(31 downto 0) := (TRAIN_C & TRAIN_C);
    constant All0_C        : slv(15 downto 0) := b"0000_0000_0000_0000";
@@ -58,7 +67,8 @@ architecture rtl of AtlasRd53TxCmd is
       LISTEN_S);
 
    type RegType is record
-      syncCnt  : natural range 0 to (32/2)-1;
+      syncCnt  : natural range 0 to (256/2)-1;
+      gpulseCnt  : natural range 0 to (256/2)-1;
       cmd      : sl;
       tData    : slv(31 downto 0);
       shiftReg : slv(31 downto 0);
@@ -68,10 +78,11 @@ architecture rtl of AtlasRd53TxCmd is
       state    : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      syncCnt  => 0,
+      syncCnt  => 1,
+      gpulseCnt=> 1,
       cmd      => '0',
-      tData    => NOP_DWORD_C,
-      shiftReg => NOP_DWORD_C,
+      tData    => b"0101_0101_0101_0101_0101_0101_0101_0101",
+      shiftReg => b"0101_0101_0101_0101_0101_0101_0101_0101",
       shiftCnt => (others => '0'),
       init     => (others => '1'),
       cmdSlave => AXI_STREAM_SLAVE_INIT_C,
@@ -81,6 +92,12 @@ architecture rtl of AtlasRd53TxCmd is
    signal rin : RegType;
 
 begin
+
+   SYNC_C_reg<=SYNC_C;
+   SYNC_freq_reg<=SYNC_freq;
+   GPulse_C_reg<=GPulse_C;
+   GPulse_freq_reg<=GPulse_freq;
+   NOP_DWORD_C_reg<= NOP_C & NOP_C;
 
    comb : process (clkEn160MHz, cmdMaster, cmdMode, r, rst160MHz) is
       variable v : RegType;
@@ -115,7 +132,7 @@ begin
             -- Default shift reg update value
             case cmdMode is
                when "00"=>
-                  v.shiftReg := NOP_DWORD_C;
+                  v.shiftReg := NOP_DWORD_C_reg;
                when "01"=>
                   v.shiftReg := TRAIN_DWORD_C;
                when "10"=>
@@ -164,18 +181,32 @@ begin
             end case;
 
             --------------------------------------------------------------------------------------
-            -- It is recommended that at lest one sync frame be inserted at least every 32 frames.
+            -- It is recommended that at lest one sync frame be inserted at least every <SYNC_freq> frames.
             --------------------------------------------------------------------------------------
-            if (r.syncCnt = (32/2)-1) then  -- shift two frame into shiftReg
+            if (r.syncCnt = SYNC_freq_reg(15 downto 1)) then  -- shift two frame into shiftReg
                -- Check for NOP and not forwarding user config
-               if (v.shiftReg = NOP_DWORD_C) and (v.cmdSlave.tReady = '0') then
+               if (v.shiftReg = NOP_DWORD_C_reg) and (v.cmdSlave.tReady = '0') then
                   -- Insert the SYNC frame
-                  v.shiftReg(15 downto 0) := SYNC_C;
+                  v.shiftReg(15 downto 0) := SYNC_C_reg;
                   -- Reset the counter
-                  v.syncCnt               := 0;
+                  v.syncCnt               := 1;
                end if;
             else
                v.syncCnt := r.syncCnt + 1;
+
+			   -- It is recommended that at lest one global pulse frame be inserted at least every <GPulse_freq> frames.
+			   if (r.gpulseCnt = GPulse_freq_reg(15 downto 1)) then  -- shift two frame into shiftReg
+																 -- Check for NOP and not forwarding user config
+				   if (v.shiftReg = NOP_DWORD_C_reg) and (v.cmdSlave.tReady = '0') then
+				  -- Insert the SYNC frame
+					   v.shiftReg(15 downto 0) := GPulse_C_reg;
+				  -- Reset the counter
+					   v.gpulseCnt               := 1;
+				   end if;
+			   else
+				   v.gpulseCnt := r.gpulseCnt + 1;
+			   end if;
+
             end if;
 
          end if;

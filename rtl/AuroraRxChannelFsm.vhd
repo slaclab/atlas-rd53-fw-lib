@@ -195,7 +195,7 @@ begin
                -- Check for service header
                elsif (header(r.cnt) = "10") then
 
-                  -- Check for data in service header
+				  -- Check for data in service header. This is for Rd53a only
                   if (data(r.cnt)(63 downto 48) = x"1E04") then
                      -- Move the data
                      v.dataMaster.tValid              := r.enable(r.cnt);

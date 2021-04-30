@@ -53,6 +53,12 @@ entity AtlasRd53TxCmdWrapper is
       dlyCmd          : in  sl              := '0';
       invCmd          : in  sl              := '0';
       cmdMode         : in  slv(1 downto 0) := "00";
+     -- Cmd Value
+      NOP_C           : in  slv(15 downto 0) := b"0110_1001_0110_1001";
+      SYNC_C          : in  slv(15 downto 0) := b"1000_0001_0111_1110";
+      SYNC_freq       : in  slv(15 downto 0) := b"0000_0000_0010_0000";
+      GPulse_C        : in  slv(15 downto 0) := b"0101_1100_0101_1100";
+      GPulse_freq     : in  slv(15 downto 0) := b"0000_0000_0000_0000";
       cmdOut          : out sl;
       cmdBusy         : out sl;
       cmdOutP         : out sl;
@@ -183,6 +189,13 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
+         -- CMD value
+         NOP_C       =>NOP_C,
+         SYNC_C      =>SYNC_C,
+         SYNC_freq   =>SYNC_freq,
+         GPulse_C    =>GPulse_C,
+         GPulse_freq =>GPulse_freq,
+         -- CMD mode
          cmdMode     => cmdMode,
          -- Clock and Reset
          clkEn160MHz => clkEn160MHz,

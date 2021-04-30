@@ -56,6 +56,12 @@ entity AtlasRd53Ctrl is
       invData         : out slv(3 downto 0);
       invCmd          : out sl;
       cmdMode         : out slv(1 downto 0);
+      -- Cmd Value
+      NOP_C           : out slv(15 downto 0);
+      SYNC_C          : out slv(15 downto 0);
+      SYNC_freq       : out slv(15 downto 0);
+      GPulse_C        : out slv(15 downto 0);
+      GPulse_freq     : out slv(15 downto 0);   
       dlyCmd          : out sl;
       rxPhyXbar       : out Slv2Array(3 downto 0);
       enUsrDlyCfg     : out sl;
@@ -96,6 +102,11 @@ architecture rtl of AtlasRd53Ctrl is
       invData        : slv(3 downto 0);
       invCmd         : sl;
       cmdMode        : slv(1 downto 0);
+      NOP_C          : slv(15 downto 0);
+      SYNC_C         : slv(15 downto 0);
+      SYNC_freq      : slv(15 downto 0);
+      GPulse_C       : slv(15 downto 0);
+      GPulse_freq    : slv(15 downto 0);   
       dlyCmd         : sl;
       cntRst         : sl;
       rollOverEn     : slv(STATUS_SIZE_C-1 downto 0);
@@ -120,6 +131,11 @@ architecture rtl of AtlasRd53Ctrl is
       invData        => (others => '1'),  -- Invert by default
       invCmd         => '0',
       cmdMode        => "00",
+      NOP_C          => b"0110_1001_0110_1001",
+      SYNC_C         => b"1000_0001_0111_1110",
+      SYNC_freq      => b"0000_0000_0010_0000",
+      GPulse_C       => b"0101_1100_0101_1100",
+      GPulse_freq    => b"0000_0000_0000_0000",
       dlyCmd         => '0',
       cntRst         => '1',
       rollOverEn     => (others => '0'),
@@ -204,6 +220,12 @@ begin
       axiSlaveRegister (axilEp, x"834", 0, v.eyescanCfg(1));
       axiSlaveRegister (axilEp, x"838", 0, v.eyescanCfg(2));
       axiSlaveRegister (axilEp, x"83C", 0, v.eyescanCfg(3));
+
+      axiSlaveRegister (axilEp, x"840", 0, v.NOP_C);
+      axiSlaveRegister (axilEp, x"844", 0, v.SYNC_C);
+      axiSlaveRegister (axilEp, x"844",16, v.SYNC_freq);
+      axiSlaveRegister (axilEp, x"848", 0, v.GPulse_C);
+      axiSlaveRegister (axilEp, x"848",16, v.GPulse_freq);
 
       axiSlaveRegister (axilEp, x"FF0", 0, v.batchSize);
       axiSlaveRegister (axilEp, x"FF0", 16, v.timerConfig);
@@ -293,6 +315,50 @@ begin
          dataIn  => r.cmdMode,
          dataOut => cmdMode);
 
+   U_NOP_C : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 16)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.NOP_C,
+         dataOut => NOP_C);
+
+   U_SYNC_C: entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 16)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.SYNC_C,
+         dataOut => SYNC_C);
+
+   U_SYNC_freq : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 16)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.SYNC_freq,
+         dataOut => SYNC_freq);
+
+   U_GPulse_C : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 16)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.GPulse_C,
+         dataOut => GPulse_C);
+
+   U_GPulse_freq : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 16)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.GPulse_freq,
+         dataOut => GPulse_freq);
 
    U_dlyCmd : entity surf.Synchronizer
       generic map (
