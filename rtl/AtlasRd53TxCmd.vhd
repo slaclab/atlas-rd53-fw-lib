@@ -99,7 +99,7 @@ begin
    GPulse_freq_reg<=GPulse_freq;
    NOP_DWORD_C_reg<= NOP_C & NOP_C;
 
-   comb : process (clkEn160MHz, cmdMaster, cmdMode, r, rst160MHz) is
+   comb : process (clkEn160MHz, cmdMaster, cmdMode, SYNC_C_reg, SYNC_freq_reg, GPulse_C_reg, GPulse_freq_reg, NOP_DWORD_C_reg, r, rst160MHz) is
       variable v : RegType;
    begin
       -- Latch the current value
