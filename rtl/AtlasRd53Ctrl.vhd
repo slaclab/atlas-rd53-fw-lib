@@ -69,6 +69,7 @@ entity AtlasRd53Ctrl is
       eyescanCfg      : out Slv8Array(3 downto 0);
       lockingCntCfg   : out slv(23 downto 0);
       debugStream     : out sl;
+      enServiceData   : out sl;
       pllRst          : out sl;
       localRst        : out sl;
       batchSize       : out slv(15 downto 0);
@@ -97,6 +98,7 @@ architecture rtl of AtlasRd53Ctrl is
       pllRst         : sl;
       localRst       : sl;
       debugStream    : sl;
+      enServiceData  : sl;
       rxPhyXbar      : Slv2Array(3 downto 0);
       selectRate     : slv(1 downto 0);
       invData        : slv(3 downto 0);
@@ -125,6 +127,7 @@ architecture rtl of AtlasRd53Ctrl is
       pllRst         => '0',
       localRst       => '0',
       debugStream    => '1',
+      enServiceData  => '0',
       rxPhyXbar      => RX_MAPPING_G,
       selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       -- selectRate     => (others => '1'),  -- Default to 160 Mb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
@@ -210,6 +213,7 @@ begin
       axiSlaveRegister (axilEp, x"810", 0, v.debugStream);
       axiSlaveRegister (axilEp, x"814", 0, v.enUsrDlyCfg);
       axiSlaveRegister (axilEp, x"818", 0, v.lockingCntCfg);
+      axiSlaveRegister (axilEp, x"81C", 0, v.enServiceData);
 
       axiSlaveRegister (axilEp, x"820", 0, v.usrDlyCfg(0));
       axiSlaveRegister (axilEp, x"824", 0, v.usrDlyCfg(1));
@@ -375,6 +379,15 @@ begin
          clk     => clk160MHz,
          dataIn  => r.debugStream,
          dataOut => debugStream);
+
+
+   U_enServiceData : entity surf.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.enServiceData,
+         dataOut => enServiceData);
 
    U_enUsrDlyCfg : entity surf.Synchronizer
       generic map (

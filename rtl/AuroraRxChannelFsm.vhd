@@ -29,6 +29,8 @@ entity AuroraRxChannelFsm is
    generic (
       TPD_G : time := 1 ns);
    port (
+      -- Service Data filter
+      enServiceData: in  sl;
       -- Timing Interface
       clk160MHz    : in  sl;
       rst160MHz    : in  sl;
@@ -103,7 +105,7 @@ architecture rtl of AuroraRxChannelFsm is
 
 begin
 
-   comb : process (afull, data, enable, header, invData, r, rst160MHz,
+   comb : process (afull, data, enable, header, invData, enServiceData, r, rst160MHz,
                    rxLinkUp, rxPhyXbar, selectRate, valid) is
       variable v      : RegType;
       variable i      : natural;
@@ -195,7 +197,7 @@ begin
                -- Check for service header
                elsif (header(r.cnt) = "10") then
 
-				  -- Check for data in service header. This is for Rd53a only
+                  -- Check for data in service header. This is for Rd53a only
                   if (data(r.cnt)(63 downto 48) = x"1E04") then
                      -- Move the data
                      v.dataMaster.tValid              := r.enable(r.cnt);
@@ -207,29 +209,51 @@ begin
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := '0';
+                     if (enServiceData) then
+                         v.dataMaster.tValid             := r.enable(r.cnt);
+                         v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     end if;
+
 
                   -- Check for first frame is AutoRead, second is from a read register command
                   elsif (data(r.cnt)(63 downto 56) = x"55") then
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := r.enable(r.cnt);
+                    if (enServiceData) then
+                        v.dataMaster.tValid             := r.enable(r.cnt);
+                        v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                    end if;
 
                   -- Check for first is from a read register command, second frame is AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"99") then
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := r.enable(r.cnt);
+                     if (enServiceData) then
+                         v.dataMaster.tValid             := r.enable(r.cnt);
+                         v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     end if;
 
                   -- Check for both register fields are from read register commands
                   elsif (data(r.cnt)(63 downto 56) = x"D2") then
                      -- Set the simulation debug flags
                      v.autoDet     := '0';
                      v.readBackDet := r.enable(r.cnt);
+                     if (enServiceData) then
+                         v.dataMaster.tValid             := r.enable(r.cnt);
+                         v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     end if;
 
-                  -- Check for both register fields are from read register commands
+                  -- Indicates an error
                   elsif (data(r.cnt)(63 downto 56) = x"CC") then
                      -- Set the simulation debug flag
                      v.errorDet := '1';
+                     if (enServiceData) then
+                         v.dataMaster.tValid             := r.enable(r.cnt);
+                         v.dataMaster.tData(63 downto 0) := data(r.cnt);
+                     end if;
+
 
                   end if;
 
