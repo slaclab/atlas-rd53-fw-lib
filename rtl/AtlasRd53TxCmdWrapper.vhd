@@ -92,7 +92,7 @@ architecture rtl of AtlasRd53TxCmdWrapper is
 
 begin
 
-   cmdOut <= cmd;
+   cmdOut <= cmd xor invCmd;
 
    --------------------------------------------------------------
    -- Prevent back pressuring the DMA if the 160 MHz is not ready
