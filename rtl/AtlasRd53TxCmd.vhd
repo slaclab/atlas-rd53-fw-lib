@@ -67,8 +67,8 @@ architecture rtl of AtlasRd53TxCmd is
       LISTEN_S);
 
    type RegType is record
-      syncCnt  : natural range 0 to (256/2)-1;
-      gpulseCnt  : natural range 0 to (256/2)-1;
+      syncCnt  : natural range 0 to 65535;
+      gpulseCnt: natural range 0 to 65535;
       cmd      : sl;
       tData    : slv(31 downto 0);
       shiftReg : slv(31 downto 0);
@@ -192,6 +192,9 @@ begin
                   v.syncCnt               := 1;
                end if;
             else
+			   if (r.syncCnt = 65535) then  -- loopback to 1
+                  v.syncCnt               := 1;
+			   end if;
                v.syncCnt := r.syncCnt + 1;
 
 			   -- It is recommended that at lest one global pulse frame be inserted at least every <GPulse_freq> frames.
@@ -204,6 +207,10 @@ begin
 					   v.gpulseCnt               := 1;
 				   end if;
 			   else
+			       if (r.gpulseCnt = 65535) then  -- loopback to 1
+                       v.gpulseCnt               := 1;
+			       end if;
+
 				   v.gpulseCnt := r.gpulseCnt + 1;
 			   end if;
 
