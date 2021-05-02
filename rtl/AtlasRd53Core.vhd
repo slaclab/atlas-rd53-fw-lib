@@ -104,6 +104,7 @@ architecture mapping of AtlasRd53Core is
    signal rxPhyXbar    : Slv2Array(3 downto 0)  := (others => (others => '0'));
    signal chBond       : sl                     := '0';
    signal debugStream  : sl                     := '0';
+   signal enServiceData: sl                     := '0';
    signal invData      : slv(3 downto 0)        := (others => '0');
    signal invCmd       : sl                     := '0';
    signal dlyCmd       : sl                     := '0';
@@ -191,6 +192,7 @@ begin
          dlyCmd          => dlyCmd,
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
+         enServiceData   => enServiceData,
          enUsrDlyCfg     => enUsrDlyCfg,
          usrDlyCfg       => usrDlyCfg,
          eyescanCfg      => eyescanCfg,
@@ -280,6 +282,7 @@ begin
             doubleHitDet  => doubleHitDet,
             rxPhyXbar     => rxPhyXbar,
             debugStream   => debugStream,
+            enServiceData => enServiceData,
             -- AutoReg and Read back Interface
             dataMaster    => dataMaster,
             configMaster  => configMaster,
