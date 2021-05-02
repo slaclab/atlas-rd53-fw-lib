@@ -331,7 +331,7 @@ begin
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := '0';
-                     if (enServiceData) then
+                     if (enServiceData = '1') then
                          v.dataMaster.tValid             := r.enable(r.cnt);
                          v.dataMaster.tData(63 downto 0) := data(r.cnt);
                      end if;
@@ -342,7 +342,7 @@ begin
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := r.enable(r.cnt);
-                    if (enServiceData) then
+                    if (enServiceData = '1') then
                         v.dataMaster.tValid             := r.enable(r.cnt);
                         v.dataMaster.tData(63 downto 0) := data(r.cnt);
                     end if;
@@ -352,7 +352,7 @@ begin
                      -- Set the simulation debug flags
                      v.autoDet     := r.enable(r.cnt);
                      v.readBackDet := r.enable(r.cnt);
-                     if (enServiceData) then
+                     if (enServiceData = '1') then
                          v.dataMaster.tValid             := r.enable(r.cnt);
                          v.dataMaster.tData(63 downto 0) := data(r.cnt);
                      end if;
@@ -362,7 +362,7 @@ begin
                      -- Set the simulation debug flags
                      v.autoDet     := '0';
                      v.readBackDet := r.enable(r.cnt);
-                     if (enServiceData) then
+                     if (enServiceData = '1') then
                          v.dataMaster.tValid             := r.enable(r.cnt);
                          v.dataMaster.tData(63 downto 0) := data(r.cnt);
                      end if;
@@ -371,7 +371,7 @@ begin
                   elsif (data(r.cnt)(63 downto 56) = x"CC") then
                      -- Set the simulation debug flag
                      v.errorDet := '1';
-                     if (enServiceData) then
+                     if (enServiceData = '1') then
                          v.dataMaster.tValid             := r.enable(r.cnt);
                          v.dataMaster.tData(63 downto 0) := data(r.cnt);
                      end if;
