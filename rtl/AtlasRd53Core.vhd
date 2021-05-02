@@ -108,6 +108,11 @@ architecture mapping of AtlasRd53Core is
    signal invCmd       : sl                     := '0';
    signal dlyCmd       : sl                     := '0';
    signal cmdMode      : slv(1 downto 0)        := (others => '0');
+   signal NOP_C        : slv(15 downto 0)       := b"0110_1001_0110_1001";
+   signal SYNC_C       : slv(15 downto 0)       := b"1000_0001_0111_1110";
+   signal SYNC_freq    : slv(15 downto 0)       := b"0000_0000_0010_0000";
+   signal GPulse_C     : slv(15 downto 0)       := b"0101_1100_0101_1100";
+   signal GPulse_freq  : slv(15 downto 0)       := b"0000_0000_0000_0000";
    signal batchSize    : slv(15 downto 0)       := (others => '0');
    signal timerConfig  : slv(15 downto 0)       := (others => '0');
    signal wrdSent      : sl                     := '0';
@@ -177,6 +182,12 @@ begin
          invData         => invData,
          invCmd          => invCmd,
          cmdMode         => cmdMode,
+         -- CMD value
+         NOP_C           => NOP_C,
+         SYNC_C          => SYNC_C,
+         SYNC_freq       => SYNC_freq,
+         GPulse_C        => GPulse_C,
+         GPulse_freq     => GPulse_freq,
          dlyCmd          => dlyCmd,
          rxPhyXbar       => rxPhyXbar,
          debugStream     => debugStream,
@@ -221,6 +232,12 @@ begin
          cmdBusy         => cmdBusy,
          invCmd          => invCmd,
          cmdMode         => cmdMode,
+         -- CMD value
+         NOP_C           => NOP_C,
+         SYNC_C          => SYNC_C,
+         SYNC_freq       => SYNC_freq,
+         GPulse_C        => GPulse_C,
+         GPulse_freq     => GPulse_freq,
          dlyCmd          => dlyCmd,
          cmdOutP         => dPortCmdP,
          cmdOutN         => dPortCmdN);
