@@ -112,7 +112,7 @@ architecture mapping of AtlasRd53Core is
    signal NOP_C        : slv(15 downto 0)       := b"0110_1001_0110_1001";
    signal SYNC_C       : slv(15 downto 0)       := b"1000_0001_0111_1110";
    signal SYNC_freq    : slv(15 downto 0)       := b"0000_0000_0010_0000";
-   signal GPulse_C     : slv(15 downto 0)       := b"0101_1100_0101_1100";
+   signal GPulse_C     : slv(31 downto 0)       := b"0101_1100_0101_1100_1010_0110_1010_0110";
    signal GPulse_freq  : slv(15 downto 0)       := b"0000_0000_0000_0000";
    signal batchSize    : slv(15 downto 0)       := (others => '0');
    signal timerConfig  : slv(15 downto 0)       := (others => '0');

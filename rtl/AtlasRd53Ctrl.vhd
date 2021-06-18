@@ -60,7 +60,7 @@ entity AtlasRd53Ctrl is
       NOP_C           : out slv(15 downto 0);
       SYNC_C          : out slv(15 downto 0);
       SYNC_freq       : out slv(15 downto 0);
-      GPulse_C        : out slv(15 downto 0);
+      GPulse_C        : out slv(31 downto 0);
       GPulse_freq     : out slv(15 downto 0);   
       dlyCmd          : out sl;
       rxPhyXbar       : out Slv2Array(3 downto 0);
@@ -107,7 +107,7 @@ architecture rtl of AtlasRd53Ctrl is
       NOP_C          : slv(15 downto 0);
       SYNC_C         : slv(15 downto 0);
       SYNC_freq      : slv(15 downto 0);
-      GPulse_C       : slv(15 downto 0);
+      GPulse_C       : slv(31 downto 0);
       GPulse_freq    : slv(15 downto 0);   
       dlyCmd         : sl;
       cntRst         : sl;
@@ -137,7 +137,7 @@ architecture rtl of AtlasRd53Ctrl is
       NOP_C          => b"0110_1001_0110_1001",
       SYNC_C         => b"1000_0001_0111_1110",
       SYNC_freq      => b"0000_0000_0010_0000",
-      GPulse_C       => b"0101_1100_0101_1100",
+      GPulse_C       => b"0101_1100_0101_1100_1010_0110_1010_0110",
       GPulse_freq    => b"0000_0000_0000_0000",
       dlyCmd         => '0',
       cntRst         => '1',
@@ -229,7 +229,7 @@ begin
       axiSlaveRegister (axilEp, x"844", 0, v.SYNC_C);
       axiSlaveRegister (axilEp, x"844",16, v.SYNC_freq);
       axiSlaveRegister (axilEp, x"848", 0, v.GPulse_C);
-      axiSlaveRegister (axilEp, x"848",16, v.GPulse_freq);
+      axiSlaveRegister (axilEp, x"84C",16, v.GPulse_freq);
 
       axiSlaveRegister (axilEp, x"FF0", 0, v.batchSize);
       axiSlaveRegister (axilEp, x"FF0", 16, v.timerConfig);
@@ -349,7 +349,7 @@ begin
    U_GPulse_C : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
-         WIDTH_G => 16)
+         WIDTH_G => 32)
       port map (
          clk     => clk160MHz,
          dataIn  => r.GPulse_C,

@@ -33,7 +33,7 @@ entity AtlasRd53TxCmd is
       NOP_C       : in slv(15 downto 0) := b"0110_1001_0110_1001";
       SYNC_C      : in slv(15 downto 0) := b"1000_0001_0111_1110";
       SYNC_freq   : in slv(15 downto 0) := b"0000_0000_0010_0000";
-      GPulse_C    : in slv(15 downto 0) := b"0101_1100_0101_1100";
+      GPulse_C    : in slv(31 downto 0) := b"0101_1100_0101_1100_1010_0110_1010_0110";
       GPulse_freq : in slv(15 downto 0) := b"0000_0000_0000_0000";
       -- CMD mode: 00 normal; 01: 010101010101; 10: constant 1; 11 constant 0
       cmdMode     : in  slv(1 downto 0) := "00";
@@ -52,7 +52,7 @@ architecture rtl of AtlasRd53TxCmd is
 
    signal SYNC_C_reg        : slv(15 downto 0) := b"1000_0001_0111_1110";
    signal SYNC_freq_reg     : slv(15 downto 0) := b"0000_0000_0010_0000";
-   signal GPulse_C_reg      : slv(15 downto 0) := b"0101_1100_0101_1100";
+   signal GPulse_C_reg      : slv(31 downto 0) := b"0101_1100_0101_1100_1010_0110_1010_0110";
    signal GPulse_freq_reg   : slv(15 downto 0) := b"0000_0000_0000_0000";
    signal NOP_DWORD_C_reg   : slv(31 downto 0) := b"0101_0101_0101_0101_0101_0101_0101_0101";
    constant TRAIN_C       : slv(15 downto 0) := b"0101_0101_0101_0101";
@@ -202,7 +202,7 @@ begin
 																 -- Check for NOP and not forwarding user config
 				   if (v.shiftReg = NOP_DWORD_C_reg) and (v.cmdSlave.tReady = '0') then
 				  -- Insert the SYNC frame
-					   v.shiftReg(15 downto 0) := GPulse_C_reg;
+					   v.shiftReg(31 downto 0) := GPulse_C_reg;
 				  -- Reset the counter
 					   v.gpulseCnt               := 1;
 				   end if;

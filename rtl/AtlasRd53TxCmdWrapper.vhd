@@ -57,7 +57,7 @@ entity AtlasRd53TxCmdWrapper is
       NOP_C           : in  slv(15 downto 0) := b"0110_1001_0110_1001";
       SYNC_C          : in  slv(15 downto 0) := b"1000_0001_0111_1110";
       SYNC_freq       : in  slv(15 downto 0) := b"0000_0000_0010_0000";
-      GPulse_C        : in  slv(15 downto 0) := b"0101_1100_0101_1100";
+      GPulse_C        : in  slv(31 downto 0) := b"0101_1100_0101_1100_1010_0110_1010_0110";
       GPulse_freq     : in  slv(15 downto 0) := b"0000_0000_0000_0000";
       cmdOut          : out sl;
       cmdBusy         : out sl;
