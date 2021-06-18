@@ -50,6 +50,7 @@ entity AuroraRxChannel is
       -- Status/Control Interface
       enable        : in  slv(3 downto 0);
       invData       : in  slv(3 downto 0);
+      dataMode      : in  slv(1 downto 0);
       selectRate    : in  slv(1 downto 0);
       linkUp        : out slv(3 downto 0);
       chBond        : out sl;
@@ -227,7 +228,7 @@ begin
          autoReadReg  => autoReadReg,
          configMaster => configMaster);
 
-   comb : process (afull, data, enable, header, invData, enServiceData, r, rst160MHz,
+   comb : process (afull, data, enable, header, invData, dataMode, enServiceData, r, rst160MHz,
                    rxLinkUp, rxPhyXbar, selectRate, valid) is
       variable v      : RegType;
       variable i      : natural;
@@ -311,13 +312,13 @@ begin
                v.rdEn(r.cnt) := '1';
 
                -- Check for data header
-               if (header(r.cnt) = "01") then
+               if (header(r.cnt) = "01" and dataMode \= "00") then
                   -- Move the data
                   v.dataMaster.tValid             := r.enable(r.cnt);
                   v.dataMaster.tData(63 downto 0) := data(r.cnt);
 
                -- Check for service header
-               elsif (header(r.cnt) = "10") then
+               elsif (header(r.cnt) = "10" and dataMode \= "00") then
 
                   -- Check for data in service header. This is for Rd53a only
                   if (data(r.cnt)(63 downto 48) = x"1E04") then

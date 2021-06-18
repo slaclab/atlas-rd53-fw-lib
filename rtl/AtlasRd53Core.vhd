@@ -106,6 +106,7 @@ architecture mapping of AtlasRd53Core is
    signal debugStream  : sl                     := '0';
    signal enServiceData: sl                     := '0';
    signal invData      : slv(3 downto 0)        := (others => '0');
+   signal dataMode     : slv(1 downto 0)        := (others => '1');
    signal invCmd       : sl                     := '0';
    signal dlyCmd       : sl                     := '0';
    signal cmdMode      : slv(1 downto 0)        := (others => '0');
@@ -181,6 +182,7 @@ begin
          enable          => enable,
          selectRate      => selectRate,
          invData         => invData,
+         dataMode        => dataMode,
          invCmd          => invCmd,
          cmdMode         => cmdMode,
          -- CMD value
@@ -273,6 +275,7 @@ begin
             enable        => enable,
             selectRate    => selectRate,
             invData       => invData,
+            dataMode      => dataMode,
             linkUp        => linkUp,
             chBond        => chBond,
             wrdSent       => wrdSent,

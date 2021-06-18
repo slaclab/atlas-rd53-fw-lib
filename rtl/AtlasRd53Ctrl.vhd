@@ -54,6 +54,7 @@ entity AtlasRd53Ctrl is
       enable          : out slv(3 downto 0);
       selectRate      : out slv(1 downto 0);
       invData         : out slv(3 downto 0);
+      dataMode        : out slv(1 downto 0);
       invCmd          : out sl;
       cmdMode         : out slv(1 downto 0);
       -- Cmd Value
@@ -102,6 +103,7 @@ architecture rtl of AtlasRd53Ctrl is
       rxPhyXbar      : Slv2Array(3 downto 0);
       selectRate     : slv(1 downto 0);
       invData        : slv(3 downto 0);
+      dataMode       : slv(1 downto 0);
       invCmd         : sl;
       cmdMode        : slv(1 downto 0);
       NOP_C          : slv(15 downto 0);
@@ -132,6 +134,7 @@ architecture rtl of AtlasRd53Ctrl is
       selectRate     => (others => '0'),  -- Default to 1.28 Gb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       -- selectRate     => (others => '1'),  -- Default to 160 Mb/s ("RD53.SEL_SER_CLK[2:0]" and "selectRate" must be the same)
       invData        => (others => '1'),  -- Invert by default
+      dataMode       => "11",
       invCmd         => '0',
       cmdMode        => "00",
       NOP_C          => b"0110_1001_0110_1001",
@@ -200,6 +203,7 @@ begin
 
       axiSlaveRegister (axilEp, x"800", 0, v.enable);
       axiSlaveRegister (axilEp, x"804", 0, v.invData);
+      axiSlaveRegister (axilEp, x"804", 4, v.dataMode);
       axiSlaveRegister (axilEp, x"808", 0, v.invCmd);
       axiSlaveRegister (axilEp, x"808", 1, v.dlyCmd);
       axiSlaveRegister (axilEp, x"808", 2, v.cmdMode);
@@ -301,6 +305,15 @@ begin
          clk     => clk160MHz,
          dataIn  => r.invData,
          dataOut => invData);
+
+   U_dataMode : entity surf.SynchronizerVector
+      generic map (
+         TPD_G   => TPD_G,
+         WIDTH_G => 2)
+      port map (
+         clk     => clk160MHz,
+         dataIn  => r.dataMode,
+         dataOut => dataMode);
 
    U_invCmd : entity surf.Synchronizer
       generic map (
