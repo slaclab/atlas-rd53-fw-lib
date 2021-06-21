@@ -312,20 +312,67 @@ begin
                v.rdEn(r.cnt) := '1';
 
                -- Check for data header
-               if (header(r.cnt) = "01" and dataMode \= "00") then
+               if (header(r.cnt) = "01" and ( not (dataMode = "00")) ) then
                   -- Move the data
                   v.dataMaster.tValid             := r.enable(r.cnt);
-                  v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+				  if (dataMode = "11") then
+					-- raw data
+					v.dataMaster.tData(63 downto 0) := data(r.cnt);
+
+				  elsif (dataMode = "01") then
+					-- data decoder for Rd53a
+                    v.dataMaster.tData(32+31 downto 32+26)  :=  data(r.cnt)(32+31 downto 32+26);
+                    v.dataMaster.tData(32+25)               :=  data(r.cnt)(32+16);
+                    v.dataMaster.tData(32+24 downto 32+16)  :=  data(r.cnt)(32+25 downto 32+17);
+                    v.dataMaster.tData(32+15 downto 32+12)  := (data(r.cnt)(32+15 downto 32+12)+1);
+                    v.dataMaster.tData(32+11 downto 32+ 8)  := (data(r.cnt)(32+11 downto 32+ 8)+1);
+                    v.dataMaster.tData(32+ 7 downto 32+ 4)  := (data(r.cnt)(32+ 7 downto 32+ 4)+1);
+                    v.dataMaster.tData(32+ 3 downto 32+ 0)  := (data(r.cnt)(32+ 3 downto 32+ 0)+1);
+
+                    v.dataMaster.tData(31 downto 26)  := data(r.cnt)(31 downto 26);
+                    v.dataMaster.tData(25)            := data(r.cnt)(16);
+                    v.dataMaster.tData(24 downto 16)  := data(r.cnt)(25 downto 17);
+                    v.dataMaster.tData(15 downto 12)  := (data(r.cnt)(15 downto 12)+1);
+                    v.dataMaster.tData(11 downto  8)  := (data(r.cnt)(11 downto  8)+1);
+                    v.dataMaster.tData( 7 downto  4)  := (data(r.cnt)( 7 downto  4)+1);
+                    v.dataMaster.tData( 3 downto  0)  := (data(r.cnt)( 3 downto  0)+1);
+
+				  elsif (dataMode = "10") then
+					-- data decoder for Rd53b
+					v.dataMaster.tData(63 downto 0) := data(r.cnt);
+				  end if;
 
                -- Check for service header
-               elsif (header(r.cnt) = "10" and dataMode \= "00") then
+               elsif (header(r.cnt) = "10" and (not (dataMode = "00")) ) then
 
                   -- Check for data in service header. This is for Rd53a only
                   if (data(r.cnt)(63 downto 48) = x"1E04") then
                      -- Move the data
                      v.dataMaster.tValid              := r.enable(r.cnt);
                      v.dataMaster.tData(63 downto 32) := x"FFFF_FFFF";
-                     v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
+
+				     if (dataMode = "11") then
+				       -- raw data
+                       v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
+
+				     elsif (dataMode = "01") then
+				       -- data decoder for Rd53a
+                       v.dataMaster.tData(31 downto 26)  := data(r.cnt)(31 downto 26);
+                       v.dataMaster.tData(25)            := data(r.cnt)(16);
+                       v.dataMaster.tData(24 downto 16)  := data(r.cnt)(25 downto 17);
+                       v.dataMaster.tData(15 downto 12)  := (data(r.cnt)(15 downto 12)+1);
+                       v.dataMaster.tData(11 downto  8)  := (data(r.cnt)(11 downto  8)+1);
+                       v.dataMaster.tData( 7 downto  4)  := (data(r.cnt)( 7 downto  4)+1);
+                       v.dataMaster.tData( 3 downto  0)  := (data(r.cnt)( 3 downto  0)+1);
+
+				     elsif (dataMode = "10") then
+				       -- data decoder for Rd53b
+                       v.dataMaster.tData(31 downto 0)  := data(r.cnt)(31 downto 0);
+				     end if;
+
+
+
 
                   -- Check for both register fields are of type AutoRead
                   elsif (data(r.cnt)(63 downto 56) = x"B4") then
